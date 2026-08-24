@@ -23,6 +23,46 @@ function response(value) {
   return { ok: true, json: async () => value }
 }
 
+function dragEvent(type, dataTransfer, { x = 480, y = 320 } = {}) {
+  const event = new dom.window.Event(type, { bubbles: true, cancelable: true })
+  Object.defineProperties(event, {
+    dataTransfer: { value: dataTransfer },
+    clientX: { value: x },
+    clientY: { value: y },
+  })
+  return event
+}
+
+function rect({ left, top, right, bottom }) {
+  return { left, top, right, bottom, width: right - left, height: bottom - top }
+}
+
+function installShellAndDropOverlay() {
+  const frame = document.createElement('div')
+  const sidebar = document.createElement('div')
+  const center = document.createElement('div')
+  const overlayLayer = document.createElement('div')
+  overlayLayer.dataset.shellOverlay = ''
+  frame.append(sidebar, center, overlayLayer)
+  document.body.appendChild(frame)
+  Object.defineProperty(frame, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => rect({ left: 0, top: 0, right: 1200, bottom: 720 }),
+  })
+  Object.defineProperty(sidebar, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => rect({ left: 0, top: 0, right: 320, bottom: 720 }),
+  })
+
+  const overlay = document.createElement('div')
+  overlay.setAttribute('role', 'status')
+  const wrap = document.createElement('div')
+  wrap.append(document.createElement('div'), document.createElement('div'), document.createElement('div'))
+  overlay.appendChild(wrap)
+  document.body.appendChild(overlay)
+  return { overlay }
+}
+
 function loadClientUi({
   currentVersion = '0.1.6',
   releaseVersion = '0.2.0',
@@ -177,6 +217,59 @@ test('Windows update action targets the matching installer asset', async () => {
     start.getAttribute('href'),
     'https://github.com/cipherTing/deepseek-harness-desktop-pure/releases/download/v0.2.0/deepdive-windows-x64-0.2.0.exe',
   )
+})
+
+test('Desktop image drops scope the overlay before it mounts and use concise release copy', async () => {
+  loadClientUi()
+  const { overlay } = installShellAndDropOverlay()
+  const dataTransfer = { types: ['Files'], files: [], dropEffect: 'copy' }
+
+  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
+  assert.ok(document.documentElement.classList.contains('ddu-file-drag-active'))
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-left'), '320px')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-right'), '0px')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-top'), '0px')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-bottom'), `${String(window.innerHeight - 720)}px`)
+
+  document.dispatchEvent(dragEvent('dragover', dataTransfer))
+  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '"松开即可添加"')
+  assert.equal(overlay.getAttribute('aria-label'), '松开即可添加')
+
+  document.dispatchEvent(dragEvent('drop', dataTransfer, { x: 0, y: 0 }))
+  assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), false)
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-left'), '')
+  const release = document.querySelector('.ddu-drop-release')
+  assert.ok(release)
+  assert.equal(release.style.left, '32px')
+  assert.equal(release.style.top, '32px')
+  release.dispatchEvent(new dom.window.Event('animationend'))
+  assert.equal(document.querySelector('.ddu-drop-release'), null)
+})
+
+test('Desktop image drops do not confirm while the composer refuses them', () => {
+  loadClientUi()
+  const dataTransfer = { types: ['Files'], files: [], dropEffect: 'none' }
+
+  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
+  document.dispatchEvent(dragEvent('drop', dataTransfer))
+
+  assert.equal(document.querySelector('.ddu-drop-release'), null)
+})
+
+test('Desktop drag leave clears the scoped overlay state', async () => {
+  loadClientUi()
+  installShellAndDropOverlay()
+  const dataTransfer = { types: ['Files'], files: [], dropEffect: 'copy' }
+
+  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
+  document.dispatchEvent(dragEvent('dragover', dataTransfer))
+  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
+  document.dispatchEvent(dragEvent('dragleave', dataTransfer))
+
+  assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), false)
+  assert.equal(document.documentElement.classList.contains('ddu-file-drag-accepted'), false)
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '')
 })
 
 test('stable releases supersede prereleases without allowing a prerelease downgrade', async () => {

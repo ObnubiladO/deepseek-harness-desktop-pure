@@ -182,6 +182,22 @@ test('Desktop loads the loopback web host without custom protocols', () => {
   assert.match(sidecar, /args: \['--host', '127\.0\.0\.1', '--port', '0', '--no-open'\]/)
 })
 
+test('Desktop leaves image drops to the browser attachment flow', () => {
+  const rust = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8')
+  const client = readFileSync(new URL('../client-ui/src/client.js', import.meta.url), 'utf8')
+
+  assert.match(rust, /\.disable_drag_drop_handler\(\)/)
+  assert.match(client, /function installDesktopDropFeedback\(/)
+  assert.match(client, /function desktopDropRegion\(\)/)
+  assert.match(client, /\[data-shell-overlay\]/)
+  assert.match(client, /"drop\.release": "松开即可添加"/)
+  assert.match(client, /html\.ddu-file-drag-active body>\[role=status\]/)
+  assert.match(client, /--ddu-drop-left/)
+  assert.match(client, /ddu-file-drag-active/)
+  assert.match(client, /dataTransfer\.dropEffect === "copy"/)
+  assert.match(client, /prefers-reduced-motion/)
+})
+
 test('Desktop resolves native file handlers without giving the WebView executable access', () => {
   const rust = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8')
   const handlers = readFileSync(new URL('../src-tauri/src/file_handlers.rs', import.meta.url), 'utf8')

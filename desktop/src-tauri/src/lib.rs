@@ -950,6 +950,9 @@ pub fn run() {
                         .title("DeepDive")
                         .inner_size(1280.0, 820.0)
                         .min_inner_size(900.0, 640.0)
+                        // The browser composer owns image intake and needs DOM `File`
+                        // objects; Tauri's native handler replaces them with paths.
+                        .disable_drag_drop_handler()
                         .on_navigation(move |target| {
                             // Allow only the CURRENT sidecar origin, read fresh
                             // from shared state: a respawn serves from a new
