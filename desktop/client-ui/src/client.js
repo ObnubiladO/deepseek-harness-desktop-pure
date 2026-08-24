@@ -248,6 +248,7 @@ window.__ModuleLoader__.load({
         if (activeOverlay !== null && activeOverlay !== overlay) clearOverlay();
         activeOverlay = overlay;
         if (acceptsDrop) overlay.setAttribute("aria-label", dropCopy());
+        else overlay.removeAttribute("aria-label");
       };
       const queueOverlaySync = () => {
         if (syncQueued) return;
@@ -283,11 +284,11 @@ window.__ModuleLoader__.load({
         if (dataTransfer === null) return;
         applyDropRegion();
         queueMicrotask(() => {
-          if (root.classList.contains("ddu-file-drag-active") && dataTransfer.dropEffect === "copy") {
-            acceptsDrop = true;
-            root.classList.add("ddu-file-drag-accepted");
-            root.style.setProperty("--ddu-drop-copy", JSON.stringify(dropCopy()));
-          }
+          if (!root.classList.contains("ddu-file-drag-active")) return;
+          acceptsDrop = dataTransfer.dropEffect === "copy";
+          root.classList.toggle("ddu-file-drag-accepted", acceptsDrop);
+          if (acceptsDrop) root.style.setProperty("--ddu-drop-copy", JSON.stringify(dropCopy()));
+          else root.style.removeProperty("--ddu-drop-copy");
           queueOverlaySync();
         });
       };
@@ -305,7 +306,7 @@ window.__ModuleLoader__.load({
       const onDrop = (event) => {
         const dataTransfer = fileTransfer(event);
         if (dataTransfer === null) return;
-        const confirmsDrop = acceptsDrop || dataTransfer.dropEffect === "copy";
+        const confirmsDrop = acceptsDrop && dataTransfer.dropEffect === "copy";
         const { clientX, clientY } = event;
         reset();
         if (confirmsDrop) showDesktopDropRelease(clientX, clientY);

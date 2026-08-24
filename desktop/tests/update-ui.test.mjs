@@ -257,6 +257,25 @@ test('Desktop image drops do not confirm while the composer refuses them', () =>
   assert.equal(document.querySelector('.ddu-drop-release'), null)
 })
 
+test('Desktop image drops revoke confirmation when the composer becomes unavailable', async () => {
+  loadClientUi()
+  const { overlay } = installShellAndDropOverlay()
+  const dataTransfer = { types: ['Files'], files: [], dropEffect: 'copy' }
+
+  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
+  document.dispatchEvent(dragEvent('dragover', dataTransfer))
+  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
+
+  dataTransfer.dropEffect = 'none'
+  document.dispatchEvent(dragEvent('dragover', dataTransfer))
+  await waitFor(() => assert.equal(document.documentElement.classList.contains('ddu-file-drag-accepted'), false))
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '')
+  assert.equal(overlay.getAttribute('aria-label'), null)
+
+  document.dispatchEvent(dragEvent('drop', dataTransfer))
+  assert.equal(document.querySelector('.ddu-drop-release'), null)
+})
+
 test('Desktop drag leave clears the scoped overlay state', async () => {
   loadClientUi()
   installShellAndDropOverlay()
