@@ -56,8 +56,8 @@ window.__ModuleLoader__.load({
       "html.ddu-file-drag-active body>[role=status]>div{padding:28px 52px;border:1px solid var(--dsw-alias-border-l2);border-radius:24px;background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-shadow-lv3);animation:ddu-drop-focus-in 180ms cubic-bezier(.2,.8,.2,1)}",
       "html.ddu-file-drag-active body>[role=status] svg{transform:translateY(-2px) scale(1.04)}",
       "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(3){display:none}",
-      "html.ddu-file-drag-accepted body>[role=status]>div>div:nth-child(2){font-size:0}",
-      "html.ddu-file-drag-accepted body>[role=status]>div>div:nth-child(2)::after{content:var(--ddu-drop-copy);display:block;font:var(--dsw-font-l-20);color:var(--dsw-alias-label-primary)}",
+      "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(2){font-size:0}",
+      "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(2)::after{content:var(--ddu-drop-copy);display:block;font:var(--dsw-font-l-20);color:var(--dsw-alias-label-primary)}",
       ".ddu-drop-release{position:fixed;z-index:1001;display:grid;width:64px;height:64px;place-items:center;border:1px solid var(--dsw-alias-border-l2);border-radius:50%;background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-state-business-primary);pointer-events:none;transform:translate(-50%,-50%) scale(.72);animation:ddu-drop-release 420ms cubic-bezier(.2,.85,.2,1) forwards}",
       ".ddu-drop-release::after{content:\"\";position:absolute;inset:-10px;border:1px solid var(--dsw-alias-state-business-primary);border-radius:inherit;opacity:0;animation:ddu-drop-release-ring 420ms ease-out forwards}",
       ".ddu-drop-release svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.25;fill:none;stroke-linecap:round;stroke-linejoin:round}",
@@ -92,6 +92,7 @@ window.__ModuleLoader__.load({
       "about.updateFound": "发现新版本 {version}",
       "about.view": "查看更新",
       "drop.release": "松开即可添加",
+      "drop.blocked": "当前无法添加",
       "badge.update": "更新",
       "dialog.title": "DeepDive 更新",
       "dialog.close": "关闭更新窗口",
@@ -116,6 +117,7 @@ window.__ModuleLoader__.load({
       "about.updateFound": "New version available: {version}",
       "about.view": "View update",
       "drop.release": "Release to add",
+      "drop.blocked": "Cannot add now",
       "badge.update": "Update",
       "dialog.title": "DeepDive update",
       "dialog.close": "Close update dialog",
@@ -180,10 +182,25 @@ window.__ModuleLoader__.load({
       if (navigator.userAgent.includes("Macintosh")) return `deepdive-macos-arm64-${normalized}.dmg`;
       return null;
     }
+    const DSH_SUPPORTED_MEDIA_TYPES = new Set([
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+    ]);
     function fileTransfer(event) {
       const dataTransfer = event.dataTransfer;
       if (dataTransfer === null || dataTransfer === undefined) return null;
       return Array.from(dataTransfer.types).includes("Files") ? dataTransfer : null;
+    }
+    function supportsDshFileTransfer(dataTransfer) {
+      const files = Array.from(dataTransfer.files ?? []);
+      const types = files.length > 0
+        ? files.map((file) => file.type)
+        : Array.from(dataTransfer.items ?? [])
+          .filter((item) => item.kind === "file")
+          .map((item) => item.type);
+      return types.length > 0 && types.every((type) => DSH_SUPPORTED_MEDIA_TYPES.has(type));
     }
     function showDesktopDropRelease(clientX, clientY) {
       const body = document.body;
@@ -229,12 +246,13 @@ window.__ModuleLoader__.load({
         element instanceof HTMLElement && element.getAttribute("role") === "status"
       )) ?? null;
     }
-    function installDesktopDropFeedback(dropCopy) {
+    function installDesktopDropFeedback(dropCopy, blockedCopy) {
       const root = document.documentElement;
       let dragDepth = 0;
       let acceptsDrop = false;
       let syncQueued = false;
       let activeOverlay = null;
+      let overlayCopy = blockedCopy();
       const clearOverlay = () => {
         if (activeOverlay === null) return;
         activeOverlay.removeAttribute("aria-label");
@@ -247,8 +265,7 @@ window.__ModuleLoader__.load({
         if (overlay === null) return;
         if (activeOverlay !== null && activeOverlay !== overlay) clearOverlay();
         activeOverlay = overlay;
-        if (acceptsDrop) overlay.setAttribute("aria-label", dropCopy());
-        else overlay.removeAttribute("aria-label");
+        overlay.setAttribute("aria-label", overlayCopy);
       };
       const queueOverlaySync = () => {
         if (syncQueued) return;
@@ -258,6 +275,7 @@ window.__ModuleLoader__.load({
       const reset = () => {
         dragDepth = 0;
         acceptsDrop = false;
+        overlayCopy = blockedCopy();
         root.classList.remove("ddu-file-drag-active", "ddu-file-drag-accepted");
         for (const name of ["--ddu-drop-top", "--ddu-drop-right", "--ddu-drop-bottom", "--ddu-drop-left", "--ddu-drop-copy"]) {
           root.style.removeProperty(name);
@@ -271,24 +289,36 @@ window.__ModuleLoader__.load({
         root.style.setProperty("--ddu-drop-right", `${region.right}px`);
         root.style.setProperty("--ddu-drop-bottom", `${region.bottom}px`);
         root.style.setProperty("--ddu-drop-left", `${region.left}px`);
+        root.style.setProperty("--ddu-drop-copy", JSON.stringify(overlayCopy));
         root.classList.add("ddu-file-drag-active");
       };
+      // `files` stays protected until drop, so only an exposed file-item MIME
+      // can enter Desktop's visual handoff. Unknown types are not guessed.
+      const blockUnsupportedFileTransfer = (event) => {
+        const dataTransfer = fileTransfer(event);
+        if (dataTransfer === null || supportsDshFileTransfer(dataTransfer)) return;
+        reset();
+        event.preventDefault();
+        dataTransfer.dropEffect = "none";
+        event.stopImmediatePropagation();
+      };
       const onDragEnter = (event) => {
-        if (fileTransfer(event) === null) return;
+        const dataTransfer = fileTransfer(event);
+        if (dataTransfer === null || !supportsDshFileTransfer(dataTransfer)) return;
         dragDepth += 1;
         applyDropRegion();
         queueOverlaySync();
       };
       const onDragOver = (event) => {
         const dataTransfer = fileTransfer(event);
-        if (dataTransfer === null) return;
+        if (dataTransfer === null || !supportsDshFileTransfer(dataTransfer)) return;
         applyDropRegion();
         queueMicrotask(() => {
           if (!root.classList.contains("ddu-file-drag-active")) return;
           acceptsDrop = dataTransfer.dropEffect === "copy";
           root.classList.toggle("ddu-file-drag-accepted", acceptsDrop);
-          if (acceptsDrop) root.style.setProperty("--ddu-drop-copy", JSON.stringify(dropCopy()));
-          else root.style.removeProperty("--ddu-drop-copy");
+          overlayCopy = acceptsDrop ? dropCopy() : blockedCopy();
+          root.style.setProperty("--ddu-drop-copy", JSON.stringify(overlayCopy));
           queueOverlaySync();
         });
       };
@@ -306,11 +336,14 @@ window.__ModuleLoader__.load({
       const onDrop = (event) => {
         const dataTransfer = fileTransfer(event);
         if (dataTransfer === null) return;
-        const confirmsDrop = acceptsDrop && dataTransfer.dropEffect === "copy";
+        const confirmsDrop = supportsDshFileTransfer(dataTransfer) && acceptsDrop && dataTransfer.dropEffect === "copy";
         const { clientX, clientY } = event;
         reset();
         if (confirmsDrop) showDesktopDropRelease(clientX, clientY);
       };
+      document.addEventListener("dragenter", blockUnsupportedFileTransfer, true);
+      document.addEventListener("dragover", blockUnsupportedFileTransfer, true);
+      document.addEventListener("drop", blockUnsupportedFileTransfer, true);
       document.addEventListener("dragenter", onDragEnter);
       document.addEventListener("dragover", onDragOver);
       document.addEventListener("dragleave", onDragLeave);
@@ -318,6 +351,9 @@ window.__ModuleLoader__.load({
       window.addEventListener("dragend", reset);
       return () => {
         reset();
+        document.removeEventListener("dragenter", blockUnsupportedFileTransfer, true);
+        document.removeEventListener("dragover", blockUnsupportedFileTransfer, true);
+        document.removeEventListener("drop", blockUnsupportedFileTransfer, true);
         document.removeEventListener("dragenter", onDragEnter);
         document.removeEventListener("dragover", onDragOver);
         document.removeEventListener("dragleave", onDragLeave);
@@ -525,7 +561,10 @@ window.__ModuleLoader__.load({
       if (locale === undefined || slots === undefined) return;
       ctx.effect(() => locale.register(NS, { zh, en }), "desktop-client-ui: dictionaries");
       ctx.effect(
-        () => installDesktopDropFeedback(() => locale.bind(NS)("drop.release")),
+        () => installDesktopDropFeedback(
+          () => locale.bind(NS)("drop.release"),
+          () => locale.bind(NS)("drop.blocked"),
+        ),
         "desktop-client-ui: image-drop feedback",
       );
       ctx.effect(() => {
