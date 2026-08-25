@@ -60,6 +60,7 @@ function installShellAndDropOverlay() {
 
   const overlay = document.createElement('div')
   overlay.setAttribute('role', 'status')
+  overlay.dataset.dshDropAccepting = 'true'
   const wrap = document.createElement('div')
   wrap.append(document.createElement('div'), document.createElement('div'), document.createElement('div'))
   overlay.appendChild(wrap)
@@ -223,83 +224,50 @@ test('Windows update action targets the matching installer asset', async () => {
   )
 })
 
-test('Desktop image drops scope the overlay before it mounts and use concise release copy', async () => {
+test('Desktop file drops scope the overlay without replacing DSH admission', () => {
   loadClientUi()
   const { overlay } = installShellAndDropOverlay()
   const dataTransfer = fileTransfer(['image/png'])
 
-  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
+  const enter = dragEvent('dragenter', dataTransfer)
+  document.dispatchEvent(enter)
   assert.ok(document.documentElement.classList.contains('ddu-file-drag-active'))
   assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-left'), '320px')
   assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-right'), '0px')
   assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-top'), '0px')
   assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-bottom'), `${String(window.innerHeight - 720)}px`)
-  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '"当前无法添加"')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-enabled-copy'), '"松开即可添加"')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-blocked-copy'), '"当前无法添加"')
+  assert.equal(enter.defaultPrevented, false)
+  assert.equal(overlay.getAttribute('aria-label'), null)
 
-  document.dispatchEvent(dragEvent('dragover', dataTransfer))
-  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
-  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '"松开即可添加"')
-  assert.equal(overlay.getAttribute('aria-label'), '松开即可添加')
+  const over = dragEvent('dragover', dataTransfer)
+  document.dispatchEvent(over)
+  assert.equal(over.defaultPrevented, false)
 
-  document.dispatchEvent(dragEvent('drop', dataTransfer, { x: 0, y: 0 }))
+  document.dispatchEvent(dragEvent('drop', dataTransfer))
   assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), false)
   assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-left'), '')
-  const release = document.querySelector('.ddu-drop-release')
-  assert.ok(release)
-  assert.equal(release.style.left, '32px')
-  assert.equal(release.style.top, '32px')
-  release.dispatchEvent(new dom.window.Event('animationend'))
-  assert.equal(document.querySelector('.ddu-drop-release'), null)
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-enabled-copy'), '')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-blocked-copy'), '')
 })
 
-test('Desktop image drops do not confirm while the composer refuses them', () => {
-  loadClientUi()
-  const dataTransfer = fileTransfer(['image/png'])
-  dataTransfer.dropEffect = 'none'
-
-  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
-  document.dispatchEvent(dragEvent('drop', dataTransfer))
-
-  assert.equal(document.querySelector('.ddu-drop-release'), null)
-})
-
-test('Desktop image drops revoke confirmation when the composer becomes unavailable', async () => {
-  loadClientUi()
-  const { overlay } = installShellAndDropOverlay()
-  const dataTransfer = fileTransfer(['image/png'])
-
-  document.dispatchEvent(dragEvent('dragenter', dataTransfer))
-  document.dispatchEvent(dragEvent('dragover', dataTransfer))
-  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
-
-  dataTransfer.dropEffect = 'none'
-  document.dispatchEvent(dragEvent('dragover', dataTransfer))
-  await waitFor(() => assert.equal(document.documentElement.classList.contains('ddu-file-drag-accepted'), false))
-  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '"当前无法添加"')
-  assert.equal(overlay.getAttribute('aria-label'), '当前无法添加')
-
-  document.dispatchEvent(dragEvent('drop', dataTransfer))
-  assert.equal(document.querySelector('.ddu-drop-release'), null)
-})
-
-test('Desktop drag leave clears the scoped overlay state', async () => {
+test('Desktop drag leave clears the scoped overlay state', () => {
   loadClientUi()
   installShellAndDropOverlay()
   const dataTransfer = fileTransfer(['image/png'])
 
   document.dispatchEvent(dragEvent('dragenter', dataTransfer))
-  document.dispatchEvent(dragEvent('dragover', dataTransfer))
-  await waitFor(() => assert.ok(document.documentElement.classList.contains('ddu-file-drag-accepted')))
   document.dispatchEvent(dragEvent('dragleave', dataTransfer))
 
   assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), false)
-  assert.equal(document.documentElement.classList.contains('ddu-file-drag-accepted'), false)
-  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-copy'), '')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-enabled-copy'), '')
+  assert.equal(document.documentElement.style.getPropertyValue('--ddu-drop-blocked-copy'), '')
 })
 
-test('Desktop blocks unsupported, unknown, and mixed file drags before the browser attachment flow', () => {
+test('Desktop leaves file-type admission and drop propagation to DSH', () => {
   loadClientUi()
-  const { overlay } = installShellAndDropOverlay()
+  installShellAndDropOverlay()
   let downstreamDrops = 0
   document.addEventListener('drop', () => { downstreamDrops += 1 })
 
@@ -310,21 +278,19 @@ test('Desktop blocks unsupported, unknown, and mixed file drags before the brows
   ]) {
     const enter = dragEvent('dragenter', dataTransfer)
     document.dispatchEvent(enter)
+    assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), true)
     const over = dragEvent('dragover', dataTransfer)
     document.dispatchEvent(over)
     const drop = dragEvent('drop', dataTransfer)
     document.dispatchEvent(drop)
 
-    assert.equal(enter.defaultPrevented, true)
-    assert.equal(over.defaultPrevented, true)
-    assert.equal(drop.defaultPrevented, true)
-    assert.equal(dataTransfer.dropEffect, 'none')
+    assert.equal(enter.defaultPrevented, false)
+    assert.equal(over.defaultPrevented, false)
+    assert.equal(drop.defaultPrevented, false)
     assert.equal(document.documentElement.classList.contains('ddu-file-drag-active'), false)
-    assert.equal(overlay.getAttribute('aria-label'), null)
   }
 
-  assert.equal(downstreamDrops, 0)
-  assert.equal(document.querySelector('.ddu-drop-release'), null)
+  assert.equal(downstreamDrops, 3)
 })
 
 test('stable releases supersede prereleases without allowing a prerelease downgrade', async () => {

@@ -203,14 +203,7 @@ test('Desktop loads the loopback web host without custom protocols', () => {
 test('Desktop leaves image drops to the browser attachment flow', () => {
   const rust = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8')
   const client = readFileSync(new URL('../client-ui/src/client.js', import.meta.url), 'utf8')
-  const attachmentTypes = readFileSync(new URL('../../packages/attachment/attachment/src/types.ts', import.meta.url), 'utf8')
-  const conversationService = readFileSync(new URL('../../packages/client/ui-conversation/src/client/service.ts', import.meta.url), 'utf8')
-  const desktopMediaTypes = client.match(/const DSH_SUPPORTED_MEDIA_TYPES = new Set\(\[([\s\S]*?)\]\);/)
-  const declaredImageTypes = attachmentTypes.match(/^export type ImageMediaType = (.+)$/m)?.[1] ?? ''
-  const browserAdmission = conversationService.match(/function imageMediaType\(value: string\): ImageMediaType \{([\s\S]*?)\n\}/)?.[1] ?? ''
-  const desktopTypes = [...(desktopMediaTypes?.[1]?.matchAll(/"([^"]+)"/g) ?? [])].map((match) => match[1])
-  const declaredTypes = [...declaredImageTypes.matchAll(/'([^']+)'/g)].map((match) => match[1])
-  const admittedTypes = [...browserAdmission.matchAll(/case '([^']+)'/g)].map((match) => match[1])
+  const dropOverlay = readFileSync(new URL('../../packages/client/ui-attachment/src/DropOverlay.tsx', import.meta.url), 'utf8')
 
   assert.match(rust, /\.disable_drag_drop_handler\(\)/)
   assert.match(client, /function installDesktopDropFeedback\(/)
@@ -221,13 +214,11 @@ test('Desktop leaves image drops to the browser attachment flow', () => {
   assert.match(client, /html\.ddu-file-drag-active body>\[role=status\]/)
   assert.match(client, /--ddu-drop-left/)
   assert.match(client, /ddu-file-drag-active/)
-  assert.match(client, /function supportsDshFileTransfer\(/)
-  assert.match(client, /blockUnsupportedFileTransfer/)
-  assert.ok(desktopMediaTypes)
-  assert.deepEqual(desktopTypes, declaredTypes)
-  assert.deepEqual(desktopTypes, admittedTypes)
-  assert.match(client, /dataTransfer\.dropEffect === "copy"/)
-  assert.match(client, /prefers-reduced-motion/)
+  assert.match(dropOverlay, /data-dsh-drop-accepting=\{disabled \? 'false' : 'true'\}/)
+  assert.match(client, /data-dsh-drop-accepting=\\"true\\"/)
+  assert.match(client, /data-dsh-drop-accepting=\\"false\\"/)
+  assert.doesNotMatch(client, /DSH_SUPPORTED_MEDIA_TYPES|supportsDshFileTransfer|blockUnsupportedFileTransfer/)
+  assert.doesNotMatch(client, /dataTransfer\.dropEffect|preventDefault\(\)|stopImmediatePropagation\(\)|ddu-drop-release/)
 })
 
 test('Desktop resolves native file handlers without giving the WebView executable access', () => {
