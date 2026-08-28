@@ -39,6 +39,20 @@
         "snapshots/**/*.mjs"
       ]
     },
+    "desktop/runtime": {
+      "entry": [
+        "src/sidecar.ts",
+        "src/surface.ts",
+        "src/directory-picker.ts",
+        "src/settings-controller.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "@deepseek-ai/dsh-.+"
+      ]
+    },
     "packages/host/directory-picker-auto": {
       "ignoreDependencies": [
         "@deepseek-ai/dsh-client-ui-directory-picker-browse",
@@ -712,16 +726,6 @@
       "entry": [
         "tests/**/*.spec.ts",
         "tests/fixtures/loader/driver.ts"
-      ],
-      "project": [
-        "src/**/*.ts",
-        "tests/**/*.ts"
-      ]
-    },
-    "packages/test-support/loader-smoke": {
-      "entry": [
-        "tests/**/*.spec.ts",
-        "tests/fixtures/*.ts"
       ],
       "project": [
         "src/**/*.ts",
