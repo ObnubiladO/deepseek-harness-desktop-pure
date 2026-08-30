@@ -826,7 +826,7 @@ function renderRuntimeApi(
     '    const next: string[] = []',
     '    for (const entry of TYPE_API) {',
     '      if (included.has(entry.name)) continue',
-    '      const pattern = new RegExp(`\\b${entry.name}\\b`)',
+    '      const pattern = new RegExp(`\\\\b${entry.name}\\\\b`)',
     '      if (!frontier.some(text => pattern.test(text))) continue',
     '      included.add(entry.name)',
     '      next.push(entry.declaration)',
@@ -1016,7 +1016,7 @@ export function renderPageRegion(page: string, services: ServiceEntry[], events:
     '',
     '## Cordis API',
     '',
-    'Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — this section is byte-identical in both language sides of the page. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).',
+    'Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).',
     '',
   ]
   for (const s of services) lines.push(...renderService(s, page, policy.linkedTypePages))

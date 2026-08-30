@@ -1,9 +1,10 @@
-/** Session export save result returned by the active surface carrier. */
-export type SessionLogDownloadSaveResult = 'download-started' | 'file-saved' | 'cancelled'
-
 /** Browser download state shared by the Session Header button and `/export`. */
 
-import { createSnapshotStore, type SessionId, type SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+
+/** Session export save result returned by the active surface carrier. */
+export type SessionLogDownloadSaveResult = 'download-started' | 'file-saved' | 'cancelled'
 
 /** Download phases presented by the shared modal. */
 export type SessionLogDownloadStatus = 'downloading' | 'success' | 'cancelled' | 'error'
@@ -104,7 +105,7 @@ export class SessionLogDownloadController {
   }
 
   /**
-   * Close one Session's dialog without cancelling an in-flight browser download.
+   * Close one Session's dialog without cancelling its in-flight surface save.
    * @param sessionId - Session whose modal closes.
    */
   dismiss(sessionId: SessionId): void {

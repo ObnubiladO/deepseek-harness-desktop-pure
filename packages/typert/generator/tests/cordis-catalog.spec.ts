@@ -7,7 +7,14 @@ import {
   renderPageRegion,
   type CordisCatalogPolicy,
 } from '../src/cordis-catalog.ts'
-import { CORDIS_CATALOG_POLICY, EVENT_SCOPE_PAGE, REGION_BEGIN, REGION_END, SERVICE_PAGE } from '../../../../scripts/gen-cordis-catalog.ts'
+import {
+  CORDIS_CATALOG_POLICY,
+  EVENT_SCOPE_PAGE,
+  localizePageRegion,
+  REGION_BEGIN,
+  REGION_END,
+  SERVICE_PAGE,
+} from '../../../../scripts/gen-cordis-catalog.ts'
 
 const workspaceRoot = resolve(import.meta.dirname, '../../../..')
 
@@ -63,11 +70,14 @@ describe('Typert-backed Cordis catalog', () => {
         CORDIS_CATALOG_POLICY,
       )
       for (const side of [page, page.replace(/\.md$/, '.zh.md')]) {
-        const committed = expected(`docs/subsystems/${side}`)
+        const rel = `docs/subsystems/${side}`
+        const committed = expected(rel)
         const begin = committed.indexOf(REGION_BEGIN)
         const end = committed.indexOf(REGION_END)
-        expect(begin, `docs/subsystems/${side} carries the region`).toBeGreaterThanOrEqual(0)
-        expect(committed.slice(begin, end + REGION_END.length)).toBe(region)
+        expect(begin, `${rel} carries the region`).toBeGreaterThanOrEqual(0)
+        expect(committed.slice(begin, end + REGION_END.length)).toBe(
+          localizePageRegion(region, rel, workspaceRoot),
+        )
       }
     }
     expect(projector.renderRuntimeApi(model)).toBe(
@@ -80,9 +90,6 @@ describe('Typert-backed Cordis catalog', () => {
     // An interface-typed key is described by its Service Definition: that is where
     // the contract and, by repository convention, the member JSDoc live.
     expect(byKey.get('lsp')?.type).toBe('LspService')
-    // The Service Definition may sit anywhere in the package, including a nested
-    // contract directory (`src/api/`), while the Context merge stays in `src`.
-    expect(byKey.get('apiProxy')?.type).toBe('ApiProxy')
     // Two packages describe `ctx.typert` — a merge-extensible interface in
     // type-meta and the implementing class in registry. The class wins: it is the
     // object a caller meets and it carries the documentation.

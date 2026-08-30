@@ -15,8 +15,9 @@ import {
  * Everything else (the index document, the boot manifest, plugin bundles,
  * /api transport, event streams, the session-export download) is served by
  * the real Harness web host at `http://127.0.0.1:<port>`, which the Tauri
- * WebView loads directly. The readiness message carries that URL; when the
- * composed client graph changes (a profile patch hot-reload), the shell
+ * WebView loads directly. The readiness message carries Connection's
+ * authenticated launch URL; when the composed client graph changes (a profile
+ * patch hot-reload), the shell
  * receives `graph-changed` and reloads the page — the same semantics as
  * refreshing a browser tab.
  */
@@ -25,8 +26,8 @@ const PROTOCOL_VERSION = 1
 /** Self-imposed cap on the host boot; the Rust side enforces 120s overall. */
 const BOOT_TIMEOUT_MS = 90_000
 const runtimeRoot = dirname(dirname(fileURLToPath(import.meta.url)))
-const runtimeManifest = join(runtimeRoot, 'package.json')
 const overlayPath = join(runtimeRoot, 'overlay.yml')
+const runtimeManifest = join(runtimeRoot, 'package.json')
 
 const protocolWrite = process.stdout.write.bind(process.stdout)
 const write: ProtocolWriter = (frame) => {
@@ -95,7 +96,9 @@ async function handleRequest(
 
 async function serve(): Promise<void> {
   const appBoot = await import('@deepseek-ai/dsh-app-boot')
-  appBoot.healProfilesModuleFallback(runtimeManifest)
+  // The profile boot heals the CLI installation closure. Desktop also owns
+  // loader-visible packages from this deploy root, so seed that closure first.
+  await appBoot.healProfilesModuleFallback({ installAnchor: runtimeManifest })
   const profileBoot = await import(new URL('./profile-boot.mjs', import.meta.url).href) as unknown as {
     runProfile(options: {
       environment: ReturnType<typeof appBoot.loadLayeredEnv>
@@ -128,11 +131,17 @@ async function serve(): Promise<void> {
     throw new Error('desktop webserver did not report a bound port')
   }
   const origin = `http://127.0.0.1:${port}`
+  const connection = ctx.get('connection') as {
+    authenticatedUrl(baseUrl: string): string
+  } | undefined
+  if (connection === undefined) {
+    throw new Error('desktop web host did not provide Connection')
+  }
 
   writeMessage(write, {
     kind: 'ready',
     protocolVersion: PROTOCOL_VERSION,
-    url: origin,
+    url: connection.authenticatedUrl(origin),
   })
 
   // Push graph recompositions (profile patch hot-reloads) so the shell can

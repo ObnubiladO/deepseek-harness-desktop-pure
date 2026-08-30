@@ -1,7 +1,8 @@
 {
   "name": "@deepseek-ai/dsh-desktop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build:harness": "pnpm dlx npm@11.18.0 --prefix .. run build",

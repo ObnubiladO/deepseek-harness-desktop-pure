@@ -18,6 +18,10 @@ const SEAT_CONTENT: Record<string, string> = {
   'settings.close': 'Close',
 }
 
+type AttentionSnapshot = Parameters<Parameters<SettingsRootComponentProps['useSessionPendingInteraction']>[0]>[0]
+const noAttention: AttentionSnapshot = new Map()
+const useSessionPendingInteraction: SettingsRootComponentProps['useSessionPendingInteraction'] = selector => selector(noAttention)
+
 function mount({
   wide = true,
   onboardingActive = true,
@@ -38,6 +42,7 @@ function mount({
   const renderSlot = vi.fn(
     ((key: string, _owner: unknown, opts?: { only?: string }) => {
       if (key === 'settings.section') return <div data-testid={`section-${opts?.only ?? 'all'}`} />
+      if (key === 'settings.update') return <span data-testid="settings-update">Update available</span>
       return SEAT_CONTENT[key]
     }) as SettingsRootComponentProps['renderSlot'],
   )
@@ -51,6 +56,7 @@ function mount({
   const unusedHook = (() => { throw new Error('unused by SettingsRoot') }) as never
   const props: SettingsRootComponentProps = {
     useSessions,
+    useSessionPendingInteraction,
     useWorkspaces: unusedHook,
     wide,
     useOnboardingSteps: select => select(steps),
@@ -91,9 +97,18 @@ describe('SettingsRoot trigger', () => {
     expect(screen.getByRole('button', { name: 'Settings', expanded: true })).toBeTruthy()
   })
 
-  it('hands the rail state to the trigger seat', () => {
+  it('renders the optional update seat after the trigger', () => {
+    const { renderSlot } = mount()
+    const trigger = screen.getByRole('button', { name: 'Settings' })
+    const update = screen.getByTestId('settings-update')
+    expect(trigger.compareDocumentPosition(update) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0)
+    expect(renderSlot).toHaveBeenCalledWith('settings.update', { wide: true })
+  })
+
+  it('hands the rail state to the trigger and update seats', () => {
     const { renderSlot } = mount({ wide: false })
     expect(renderSlot).toHaveBeenCalledWith('settings.trigger', { wide: false })
+    expect(renderSlot).toHaveBeenCalledWith('settings.update', { wide: false })
   })
 })
 

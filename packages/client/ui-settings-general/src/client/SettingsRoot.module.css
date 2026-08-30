@@ -1,10 +1,4 @@
-/* Settings shell (figma 501:29904 mask context / 501:29947 panel): sidebar
-   foot trigger row + centered 1080x700 modal panel. The trigger uses the
-   sidebar foot's 42px row / 36px rail circle rhythm; the
-   panel is a two-column layout — 188px nav rail + content column with a
-   54px header and the 24px-padded options area. */
-
-/* Trigger stack: the settings control followed by an optional update control. */
+/* Settings trigger followed by the optional Desktop update control. */
 .triggerRow {
   display: flex;
   flex-direction: column;

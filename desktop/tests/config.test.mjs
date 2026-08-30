@@ -167,32 +167,43 @@ test('Desktop loads the loopback web host without custom protocols', () => {
   }
   // macOS hardened runtime needs outbound network access for the WebView.
   assert.match(entitlements, /<key>com\.apple\.security\.network\.client<\/key>\s*<true\/>/)
-  // The in-process fake HTTP server is gone; the desktop API gateway keeps
-  // the shared apiproxy core and only swaps the open-path defaults.
+  // The upstream Connection and Typert Gateway stay intact. Desktop replaces
+  // only Settings Controller's native opener through the Tauri system bridge.
   assert.equal(runtimePackage.exports['./webserver'], undefined)
-  assert.equal(runtimePackage.exports['./api-gateway'], './lib/api-gateway.mjs')
+  assert.equal(runtimePackage.exports['./api-gateway'], undefined)
+  assert.equal(runtimePackage.exports['./settings-controller'], './lib/settings-controller.mjs')
+  assert.equal(runtimePackage.dependencies['@deepseek-ai/dsh-host-apiproxy'], undefined)
+  for (const dependency of [
+    '@deepseek-ai/dsh-api-settings-controller',
+    '@deepseek-ai/dsh-attachment',
+    '@deepseek-ai/dsh-brand',
+    '@deepseek-ai/dsh-credentials',
+    '@deepseek-ai/dsh-jobs',
+    '@deepseek-ai/dsh-session-persistence',
+    '@deepseek-ai/dsh-session-query',
+    '@deepseek-ai/dsh-settings',
+  ]) {
+    assert.equal(runtimePackage.dependencies[dependency], 'workspace:^')
+  }
   // The overlay keeps the standard web transport rows enabled.
   assert.doesNotMatch(overlay, /- id: webserver\n\s+disabled: true/)
   assert.doesNotMatch(overlay, /- id: web-startup\n\s+disabled: true/)
+  assert.doesNotMatch(overlay, /- id: connection\n\s+disabled: true/)
   assert.doesNotMatch(overlay, /desktop-webserver/)
-  assert.match(overlay, /desktop-api-gateway/)
+  assert.match(overlay, /desktop-settings-controller/)
   // One surface prompt: the desktop wording replaces the web one.
   assert.match(overlay, /openBrowser: !!js ctx\.webStartup\.openBrowser/)
+  assert.match(overlay, /printUrl: false/)
   assert.match(overlay, /surfaceContext: false/)
   assert.match(sidecar, /args: \['--host', '127\.0\.0\.1', '--port', '0', '--no-open'\]/)
+  assert.match(sidecar, /connection\.authenticatedUrl\(origin\)/)
+  assert.match(sidecar, /healProfilesModuleFallback\(\{ installAnchor: runtimeManifest \}\)/)
 })
 
 test('Desktop leaves image drops to the browser attachment flow', () => {
   const rust = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8')
   const client = readFileSync(new URL('../client-ui/src/client.js', import.meta.url), 'utf8')
-  const attachmentTypes = readFileSync(new URL('../../packages/attachment/attachment/src/types.ts', import.meta.url), 'utf8')
-  const conversationService = readFileSync(new URL('../../packages/client/ui-conversation/src/client/service.ts', import.meta.url), 'utf8')
-  const desktopMediaTypes = client.match(/const DSH_SUPPORTED_MEDIA_TYPES = new Set\(\[([\s\S]*?)\]\);/)
-  const declaredImageTypes = attachmentTypes.match(/^export type ImageMediaType = (.+)$/m)?.[1] ?? ''
-  const browserAdmission = conversationService.match(/function imageMediaType\(value: string\): ImageMediaType \{([\s\S]*?)\n\}/)?.[1] ?? ''
-  const desktopTypes = [...(desktopMediaTypes?.[1]?.matchAll(/"([^"]+)"/g) ?? [])].map((match) => match[1])
-  const declaredTypes = [...declaredImageTypes.matchAll(/'([^']+)'/g)].map((match) => match[1])
-  const admittedTypes = [...browserAdmission.matchAll(/case '([^']+)'/g)].map((match) => match[1])
+  const dropOverlay = readFileSync(new URL('../../packages/client/ui-attachment/src/DropOverlay.tsx', import.meta.url), 'utf8')
 
   assert.match(rust, /\.disable_drag_drop_handler\(\)/)
   assert.match(client, /function installDesktopDropFeedback\(/)
@@ -203,13 +214,11 @@ test('Desktop leaves image drops to the browser attachment flow', () => {
   assert.match(client, /html\.ddu-file-drag-active body>\[role=status\]/)
   assert.match(client, /--ddu-drop-left/)
   assert.match(client, /ddu-file-drag-active/)
-  assert.match(client, /function supportsDshFileTransfer\(/)
-  assert.match(client, /blockUnsupportedFileTransfer/)
-  assert.ok(desktopMediaTypes)
-  assert.deepEqual(desktopTypes, declaredTypes)
-  assert.deepEqual(desktopTypes, admittedTypes)
-  assert.match(client, /dataTransfer\.dropEffect === "copy"/)
-  assert.match(client, /prefers-reduced-motion/)
+  assert.match(dropOverlay, /data-dsh-drop-accepting=\{disabled \? 'false' : 'true'\}/)
+  assert.match(client, /data-dsh-drop-accepting=\\"true\\"/)
+  assert.match(client, /data-dsh-drop-accepting=\\"false\\"/)
+  assert.doesNotMatch(client, /DSH_SUPPORTED_MEDIA_TYPES|supportsDshFileTransfer|blockUnsupportedFileTransfer/)
+  assert.doesNotMatch(client, /dataTransfer\.dropEffect|preventDefault\(\)|stopImmediatePropagation\(\)|ddu-drop-release/)
 })
 
 test('Desktop resolves native file handlers without giving the WebView executable access', () => {
@@ -268,6 +277,7 @@ test('Desktop uses the generic async save carrier instead of patching anchor cli
 
   assert.match(bridge, /__DSH_DOWNLOAD_CARRIER__/)
   assert.match(bridge, /desktop_save_session/)
+  assert.doesNotMatch(bridge, /document\.cookie/)
   assert.doesNotMatch(bridge, /HTMLAnchorElement\.prototype\.click/)
 })
 
@@ -287,7 +297,10 @@ test('Desktop shell supervises the official Tauri Node sidecar without a native 
   assert.match(rust, /RESPAWN_ATTEMPTS/)
   assert.match(rust, /show_error_and_exit/)
   assert.match(rust, /blocking_show\(\)/)
-  // The session export streams directly from the loopback host in Rust.
+  // The session export reuses the current WebView's HttpOnly session only for
+  // the validated loopback export URL, then streams directly to disk in Rust.
+  assert.match(rust, /cookies_for_url/)
+  assert.match(rust, /\.set\("Cookie", cookie_header\)/)
   assert.match(rust, /ureq::AgentBuilder/)
   assert.match(rust, /redirects\(0\)/)
   assert.match(rust, /download_export/)
@@ -317,18 +330,21 @@ test('Desktop shell supervises the official Tauri Node sidecar without a native 
 
 test('Desktop overlay rows match the shipped web composition contract', () => {
   const overlay = readFileSync(new URL('../runtime/overlay.yml', import.meta.url), 'utf8')
+  const basePatch = readFileSync(
+    new URL('../../packages/bundle/base/cordis.patch.yml', import.meta.url), 'utf8')
   const webPatch = readFileSync(
     new URL('../../packages/bundle/web-app/cordis.patch.yml', import.meta.url), 'utf8')
 
   // Rows the overlay disables must exist by those exact ids in the web layer.
-  for (const id of ['directory-picker', 'api-gateway']) {
+  for (const id of ['directory-picker', 'settings-controller']) {
     assert.match(webPatch, new RegExp(`- id: ${id}\\b`), `web patch must define row ${id}`)
   }
-  // The web surface disables the `hmr` row and keeps `client-hmr` mounted;
-  // the desktop overlay must follow the same contract.
-  assert.match(webPatch, /- id: hmr\n\s+disabled: true/)
-  assert.doesNotMatch(overlay, /- id: client-hmr\n\s+disabled: true/)
+  // Alpha1 keeps the base HMR host and the Web client reload row mounted;
+  // the Desktop overlay must not disable either one.
+  assert.match(basePatch, /- id: hmr\n\s+name: '@deepseek-ai\/cordis-plugin-hmr'/)
+  assert.doesNotMatch(overlay, /- id: hmr\n\s+disabled: true/)
   assert.match(webPatch, /- id: client-hmr\n\s+name: '@deepseek-ai\/dsh-client-hmr'/)
+  assert.doesNotMatch(overlay, /- id: client-hmr\n\s+disabled: true/)
   // The desktop-only client UI (About section + update badge) is mounted.
   assert.match(overlay, /desktop-client-ui/)
 })
@@ -340,7 +356,12 @@ test('Desktop client UI package ships the dsh.client contract', () => {
 
   assert.equal(clientUi.dsh.client.platform, 'web')
   assert.equal(clientUi.exports['./client'].default, './lib/client.js')
-  assert.ok(clientUi.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-settings'))
+  assert.deepEqual(clientUi.dsh.client.inject, [
+    '@deepseek-ai/dsh-client-locale',
+    '@deepseek-ai/dsh-client-ui-renderer',
+    '@deepseek-ai/dsh-client-ui-settings',
+  ])
+  assert.match(client, /const inject = \["locale", "slots"\]/)
   assert.ok(Object.keys(runtime.dependencies ?? {}).includes('@deepseek-ai/dsh-desktop-client-ui'))
   // Identity facts the About section surfaces.
   assert.equal(runtime.repository?.url, 'https://github.com/cipherTing/deepseek-harness-desktop-pure')

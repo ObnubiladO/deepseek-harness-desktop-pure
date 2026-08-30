@@ -20,7 +20,7 @@
 
 流水线使用**整篇文档**的中英对照作为 few-shot，不是模板内嵌的句子级正误例。以下 5 组配对文档均经过人工评审，以仓库当前版本为准、随仓库更新：
 
-- `README.en.md` ↔ `README.md`
+- `README.md` ↔ `README.zh.md`
 - `docs/development.md` ↔ `docs/development.zh.md`
 - `docs/i18n/README.md` ↔ `docs/i18n/README.zh.md`
 - `docs/i18n/translation-rules.md` ↔ `docs/i18n/translation-rules.zh.md`
@@ -51,12 +51,12 @@ A lower-priority rule may refine but never override a higher-priority requiremen
 ## Quality Requirements
 
 ### Structure and Format Preservation
-- Output a complete translated document that maintains the same document frame as the source: heading hierarchy and order, list kinds and item counts, ordered-list starts, table rows and columns, link targets, and code blocks.
+- Output a complete translated document that maintains the same document frame as the source: heading hierarchy and order, list kinds and item counts, ordered-list starts, table rows and columns, link order and semantic targets, and code blocks.
 - Paragraph boundaries may change within the same structural unit when the target language needs different semantic grouping. Do not merge or move content across headings, list items, table cells, or other independent structural units.
 - Keep each prose paragraph on one physical line. Use paragraph breaks, not hard-wrapped lines inside a paragraph.
 - Fenced code blocks must be byte-identical to the source, including info strings, whitespace, and ALL comments inside them. Do NOT translate or reformat any content inside code blocks. This is a hard rule with no exceptions.
 - Inline code spans must be kept verbatim. This includes commands, flags, paths, identifiers, API and event names, config keys, protocol values, version numbers, and other machine-readable tokens. Never translate or reformat them.
-- Every relative link must point to the same target as in the source. Translate link text; do not change link targets.
+- Every repository-relative document link must keep the source link's semantic target and exact query/fragment suffix. When the target belongs to the active bilingual corpus, English output uses its `.md` path and Chinese output uses its `.zh.md` path; a missing counterpart in that corpus is an error, while targets outside it keep the original path. External URLs, images, and pure in-page fragments stay unchanged. Translate link text.
 - Language switcher line: when an English source contains `English | [中文](source-filename.zh.md)`, write `[English](source-filename.md) | 中文`. When a Chinese source contains `[English](source-filename.md) | 中文`, write `English | [中文](source-filename.zh.md)`. Do NOT copy the source switcher unchanged. If the source has no switcher, do not invent a filename or switcher; the pipeline inserts the canonical target switcher after parsing `<final>`.
 - Preserve emphasis marker types and the semantic spans they cover. Do not add, remove, move, or change bold and italic markers.
 
@@ -159,7 +159,7 @@ After writing `<translation>`, verify it in two directions. First re-read it in 
 - Are ALL comments and info strings inside code blocks left untranslated and byte-identical to the source?
 - Are inline code spans and machine-readable tokens verbatim?
 - Is an existing language switcher correctly flipped, and is no switcher or filename invented when the source lacks one?
-- Are link targets and emphasis spans preserved?
+- Do links preserve their semantic targets and exact query/fragment suffixes while using target-locale paths, and are emphasis spans preserved?
 - Does spacing across emphasis boundaries follow the same Chinese/Latin/numeral rule as ordinary prose?
 - Are wrapper-tag lines inside section bodies escaped with one additional backslash?
 
@@ -253,9 +253,9 @@ Below are representative examples of common problems and their corrections. Foll
 - Good: `# full-screen TUI coding agent (needs DEEPSEEK_API_KEY)` (keep exactly as-is, byte-for-byte)
 
 ### Language switcher — flip direction
-- Source file (English) has: `[中文](README.md) | English`
-- Bad (copying source unchanged): `[中文](README.md) | English`
-- Good (flipped for Chinese file): `中文 | [English](README.en.md)`
+- Source file (English) has: `English | [中文](README.zh.md)`
+- Bad (copying source unchanged): `English | [中文](README.zh.md)`
+- Good (flipped for Chinese file): `[English](README.md) | 中文`
 
 ---
 

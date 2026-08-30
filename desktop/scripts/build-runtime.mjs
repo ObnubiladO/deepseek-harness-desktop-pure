@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
@@ -7,13 +7,10 @@ const desktop = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const root = resolve(desktop, '..')
 const runtime = resolve(desktop, 'runtime')
 const outdir = resolve(runtime, 'lib')
-const config = resolve(runtime, 'config')
 const deployDir = resolve(desktop, 'src-tauri/rt')
 
 await rm(outdir, { recursive: true, force: true })
-await rm(config, { recursive: true, force: true })
 await mkdir(outdir, { recursive: true })
-await cp(resolve(root, 'apps/cli/config'), config, { recursive: true })
 await writeProfileBootBridge()
 await writeBridgeScriptModule()
 await stageClientUiBundle()
@@ -35,7 +32,7 @@ await build({
     sidecar: resolve(runtime, 'src/sidecar.ts'),
     surface: resolve(runtime, 'src/surface.ts'),
     'directory-picker': resolve(runtime, 'src/directory-picker.ts'),
-    'api-gateway': resolve(runtime, 'src/api-gateway.ts'),
+    'settings-controller': resolve(runtime, 'src/settings-controller.ts'),
   },
   outdir,
   entryNames: '[name]',
@@ -47,16 +44,11 @@ await build({
 await rm(deployDir, { recursive: true, force: true })
 
 async function writeProfileBootBridge() {
-  const cliLib = resolve(root, 'apps/cli/lib')
-  const candidates = (await readdir(cliLib))
-    .filter(name => /^profile-boot-.+\.js$/.test(name))
-  const facades = []
-  for (const name of candidates) {
-    const source = await readFile(resolve(cliLib, name), 'utf8')
-    if (/export\s*\{\s*runProfile\s*\}/.test(source)) facades.push(name)
-  }
-  if (facades.length !== 1) {
-    throw new Error(`expected one built dsh profile-boot facade, found ${facades.length}`)
+  const bin = await readFile(resolve(root, 'apps/cli/lib/bin.js'), 'utf8')
+  const facades = [...bin.matchAll(/import\("\.\/(profile-boot-[^"]+\.js)"\)/g)]
+    .map(match => match[1])
+  if (facades.length !== 1 || facades[0] === undefined) {
+    throw new Error(`expected built dsh bin to import one profile-boot facade, found ${facades.length}`)
   }
   const specifier = `../node_modules/@deepseek-ai/dsh/lib/${facades[0]}`
   await writeFile(resolve(outdir, 'profile-boot.mjs'), `export { runProfile } from ${JSON.stringify(specifier)}\n`)

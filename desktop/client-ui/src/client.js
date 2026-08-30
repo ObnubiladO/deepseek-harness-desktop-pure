@@ -57,14 +57,10 @@ window.__ModuleLoader__.load({
       "html.ddu-file-drag-active body>[role=status] svg{transform:translateY(-2px) scale(1.04)}",
       "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(3){display:none}",
       "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(2){font-size:0}",
-      "html.ddu-file-drag-active body>[role=status]>div>div:nth-child(2)::after{content:var(--ddu-drop-copy);display:block;font:var(--dsw-font-l-20);color:var(--dsw-alias-label-primary)}",
-      ".ddu-drop-release{position:fixed;z-index:1001;display:grid;width:64px;height:64px;place-items:center;border:1px solid var(--dsw-alias-border-l2);border-radius:50%;background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-state-business-primary);pointer-events:none;transform:translate(-50%,-50%) scale(.72);animation:ddu-drop-release 420ms cubic-bezier(.2,.85,.2,1) forwards}",
-      ".ddu-drop-release::after{content:\"\";position:absolute;inset:-10px;border:1px solid var(--dsw-alias-state-business-primary);border-radius:inherit;opacity:0;animation:ddu-drop-release-ring 420ms ease-out forwards}",
-      ".ddu-drop-release svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.25;fill:none;stroke-linecap:round;stroke-linejoin:round}",
+      "html.ddu-file-drag-active body>[role=status][data-dsh-drop-accepting=\"true\"]>div>div:nth-child(2)::after{content:var(--ddu-drop-enabled-copy);display:block;font:var(--dsw-font-l-20);color:var(--dsw-alias-label-primary)}",
+      "html.ddu-file-drag-active body>[role=status][data-dsh-drop-accepting=\"false\"]>div>div:nth-child(2)::after{content:var(--ddu-drop-blocked-copy);display:block;font:var(--dsw-font-l-20);color:var(--dsw-alias-label-primary)}",
       "@keyframes ddu-drop-focus-in{from{opacity:.72;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}",
-      "@keyframes ddu-drop-release{0%{opacity:0;transform:translate(-50%,-50%) scale(.72)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}58%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.92)}}",
-      "@keyframes ddu-drop-release-ring{0%{opacity:.7;transform:scale(.68)}100%{opacity:0;transform:scale(1.45)}}",
-      "@media (prefers-reduced-motion:reduce){html.ddu-file-drag-active body>[role=status]>div,.ddu-drop-release,.ddu-drop-release::after{animation:none}}",
+      "@media (prefers-reduced-motion:reduce){html.ddu-file-drag-active body>[role=status]>div{animation:none}}",
     ].join("");
 
     const tagId = "@deepseek-ai/dsh-desktop-client-ui/about.module.css";
@@ -182,48 +178,10 @@ window.__ModuleLoader__.load({
       if (navigator.userAgent.includes("Macintosh")) return `deepdive-macos-arm64-${normalized}.dmg`;
       return null;
     }
-    const DSH_SUPPORTED_MEDIA_TYPES = new Set([
-      "image/png",
-      "image/jpeg",
-      "image/webp",
-      "image/gif",
-    ]);
     function fileTransfer(event) {
       const dataTransfer = event.dataTransfer;
       if (dataTransfer === null || dataTransfer === undefined) return null;
       return Array.from(dataTransfer.types).includes("Files") ? dataTransfer : null;
-    }
-    function supportsDshFileTransfer(dataTransfer) {
-      const files = Array.from(dataTransfer.files ?? []);
-      const types = files.length > 0
-        ? files.map((file) => file.type)
-        : Array.from(dataTransfer.items ?? [])
-          .filter((item) => item.kind === "file")
-          .map((item) => item.type);
-      return types.length > 0 && types.every((type) => DSH_SUPPORTED_MEDIA_TYPES.has(type));
-    }
-    function showDesktopDropRelease(clientX, clientY) {
-      const body = document.body;
-      if (body === null) return;
-      const release = document.createElement("span");
-      const min = 32;
-      const clamp = (value, extent) => Math.min(Math.max(min, value), Math.max(min, extent - min));
-      const x = clamp(Number.isFinite(clientX) ? clientX : window.innerWidth / 2, window.innerWidth);
-      const y = clamp(Number.isFinite(clientY) ? clientY : window.innerHeight / 2, window.innerHeight);
-      release.className = "ddu-drop-release";
-      release.setAttribute("aria-hidden", "true");
-      release.style.left = `${x}px`;
-      release.style.top = `${y}px`;
-      release.innerHTML = '<svg viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7" /></svg>';
-      let timeout;
-      const remove = () => {
-        release.remove();
-        window.clearTimeout(timeout);
-      };
-      release.addEventListener("animationend", remove, { once: true });
-      body.appendChild(release);
-      const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
-      timeout = window.setTimeout(remove, reduced ? 180 : 560);
     }
     function desktopDropRegion() {
       const overlayLayer = document.querySelector("[data-shell-overlay]");
@@ -241,46 +199,15 @@ window.__ModuleLoader__.load({
         left,
       };
     }
-    function dropOverlay() {
-      return Array.from(document.body.children).find((element) => (
-        element instanceof HTMLElement && element.getAttribute("role") === "status"
-      )) ?? null;
-    }
     function installDesktopDropFeedback(dropCopy, blockedCopy) {
       const root = document.documentElement;
       let dragDepth = 0;
-      let acceptsDrop = false;
-      let syncQueued = false;
-      let activeOverlay = null;
-      let overlayCopy = blockedCopy();
-      const clearOverlay = () => {
-        if (activeOverlay === null) return;
-        activeOverlay.removeAttribute("aria-label");
-        activeOverlay = null;
-      };
-      const syncOverlay = () => {
-        syncQueued = false;
-        if (dragDepth === 0) return;
-        const overlay = dropOverlay();
-        if (overlay === null) return;
-        if (activeOverlay !== null && activeOverlay !== overlay) clearOverlay();
-        activeOverlay = overlay;
-        overlay.setAttribute("aria-label", overlayCopy);
-      };
-      const queueOverlaySync = () => {
-        if (syncQueued) return;
-        syncQueued = true;
-        queueMicrotask(syncOverlay);
-      };
       const reset = () => {
         dragDepth = 0;
-        acceptsDrop = false;
-        overlayCopy = blockedCopy();
-        root.classList.remove("ddu-file-drag-active", "ddu-file-drag-accepted");
-        for (const name of ["--ddu-drop-top", "--ddu-drop-right", "--ddu-drop-bottom", "--ddu-drop-left", "--ddu-drop-copy"]) {
+        root.classList.remove("ddu-file-drag-active");
+        for (const name of ["--ddu-drop-top", "--ddu-drop-right", "--ddu-drop-bottom", "--ddu-drop-left", "--ddu-drop-enabled-copy", "--ddu-drop-blocked-copy"]) {
           root.style.removeProperty(name);
         }
-        clearOverlay();
       };
       const applyDropRegion = () => {
         const region = desktopDropRegion();
@@ -289,38 +216,20 @@ window.__ModuleLoader__.load({
         root.style.setProperty("--ddu-drop-right", `${region.right}px`);
         root.style.setProperty("--ddu-drop-bottom", `${region.bottom}px`);
         root.style.setProperty("--ddu-drop-left", `${region.left}px`);
-        root.style.setProperty("--ddu-drop-copy", JSON.stringify(overlayCopy));
+        root.style.setProperty("--ddu-drop-enabled-copy", JSON.stringify(dropCopy()));
+        root.style.setProperty("--ddu-drop-blocked-copy", JSON.stringify(blockedCopy()));
         root.classList.add("ddu-file-drag-active");
-      };
-      // `files` stays protected until drop, so only an exposed file-item MIME
-      // can enter Desktop's visual handoff. Unknown types are not guessed.
-      const blockUnsupportedFileTransfer = (event) => {
-        const dataTransfer = fileTransfer(event);
-        if (dataTransfer === null || supportsDshFileTransfer(dataTransfer)) return;
-        reset();
-        event.preventDefault();
-        dataTransfer.dropEffect = "none";
-        event.stopImmediatePropagation();
       };
       const onDragEnter = (event) => {
         const dataTransfer = fileTransfer(event);
-        if (dataTransfer === null || !supportsDshFileTransfer(dataTransfer)) return;
+        if (dataTransfer === null) return;
         dragDepth += 1;
         applyDropRegion();
-        queueOverlaySync();
       };
       const onDragOver = (event) => {
         const dataTransfer = fileTransfer(event);
-        if (dataTransfer === null || !supportsDshFileTransfer(dataTransfer)) return;
+        if (dataTransfer === null) return;
         applyDropRegion();
-        queueMicrotask(() => {
-          if (!root.classList.contains("ddu-file-drag-active")) return;
-          acceptsDrop = dataTransfer.dropEffect === "copy";
-          root.classList.toggle("ddu-file-drag-accepted", acceptsDrop);
-          overlayCopy = acceptsDrop ? dropCopy() : blockedCopy();
-          root.style.setProperty("--ddu-drop-copy", JSON.stringify(overlayCopy));
-          queueOverlaySync();
-        });
       };
       const onDragLeave = (event) => {
         if (fileTransfer(event) === null) return;
@@ -334,16 +243,8 @@ window.__ModuleLoader__.load({
         if ((event.target === document.documentElement || event.target === document.body) && leftViewport) reset();
       };
       const onDrop = (event) => {
-        const dataTransfer = fileTransfer(event);
-        if (dataTransfer === null) return;
-        const confirmsDrop = supportsDshFileTransfer(dataTransfer) && acceptsDrop && dataTransfer.dropEffect === "copy";
-        const { clientX, clientY } = event;
-        reset();
-        if (confirmsDrop) showDesktopDropRelease(clientX, clientY);
+        if (fileTransfer(event) !== null) reset();
       };
-      document.addEventListener("dragenter", blockUnsupportedFileTransfer, true);
-      document.addEventListener("dragover", blockUnsupportedFileTransfer, true);
-      document.addEventListener("drop", blockUnsupportedFileTransfer, true);
       document.addEventListener("dragenter", onDragEnter);
       document.addEventListener("dragover", onDragOver);
       document.addEventListener("dragleave", onDragLeave);
@@ -351,15 +252,11 @@ window.__ModuleLoader__.load({
       window.addEventListener("dragend", reset);
       return () => {
         reset();
-        document.removeEventListener("dragenter", blockUnsupportedFileTransfer, true);
-        document.removeEventListener("dragover", blockUnsupportedFileTransfer, true);
-        document.removeEventListener("drop", blockUnsupportedFileTransfer, true);
         document.removeEventListener("dragenter", onDragEnter);
         document.removeEventListener("dragover", onDragOver);
         document.removeEventListener("dragleave", onDragLeave);
         document.removeEventListener("drop", onDrop);
         window.removeEventListener("dragend", reset);
-        document.querySelectorAll(".ddu-drop-release").forEach((release) => { release.remove(); });
       };
     }
     async function fetchLatest(repository) {
@@ -553,12 +450,12 @@ window.__ModuleLoader__.load({
     }
 
     // ── plugin body ────────────────────────────────────────────────────────
-    const inject = [];
+    // Cordis must wait for both services before running this plugin.
+    const inject = ["locale", "slots"];
 
     function apply(ctx) {
-      const locale = ctx.get("locale");
-      const slots = ctx.get("slots");
-      if (locale === undefined || slots === undefined) return;
+      const locale = ctx.locale;
+      const slots = ctx.slots;
       ctx.effect(() => locale.register(NS, { zh, en }), "desktop-client-ui: dictionaries");
       ctx.effect(
         () => installDesktopDropFeedback(

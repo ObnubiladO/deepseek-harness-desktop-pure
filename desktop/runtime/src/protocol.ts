@@ -42,7 +42,7 @@ function abortError(): Error {
   return new DOMException('The operation was aborted', 'AbortError')
 }
 
-export class SystemBridge {
+class SystemBridge {
   private write: ProtocolWriter | undefined
   private nextId = 1
   private readonly pending = new Map<number, {

@@ -79,13 +79,39 @@ async function runSidecarSmoke(launchMode) {
     })
     assert.equal(ready.kind, 'ready', stderr || ready.error)
     assert.equal(ready.protocolVersion, 1)
-    assert.match(ready.url, /^http:\/\/127\.0\.0\.1:\d+$/)
+    const launchUrl = new URL(ready.url)
+    assert.equal(launchUrl.protocol, 'http:')
+    assert.equal(launchUrl.hostname, '127.0.0.1')
+    assert.match(launchUrl.port, /^\d+$/)
+    assert.match(launchUrl.searchParams.get('token') ?? '', /^[A-Za-z0-9_-]{43}$/)
+    assert.equal([...launchUrl.searchParams.keys()].join(','), 'token')
     assert.doesNotMatch(stderr, /opening the default browser/)
-    const origin = ready.url
+    const origin = launchUrl.origin
+
+    const unauthenticatedBody = JSON.stringify({
+      type: 'client-request', rpcId: 'desktop-unauthenticated', method: 'settings/describe', payload: { args: {} },
+    })
+    const unauthenticated = await fetch(`${origin}/api/settings/describe`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: unauthenticatedBody,
+    })
+    assert.equal(unauthenticated.status, 401)
+
+    const exchange = await fetch(launchUrl, { redirect: 'manual' })
+    assert.equal(exchange.status, 303)
+    assert.equal(exchange.headers.get('location'), '/')
+    const setCookie = exchange.headers.get('set-cookie')
+    assert.notEqual(setCookie, null, 'launch token exchange must set a browser cookie')
+    const cookie = setCookie.split(';', 1)[0]
+    const authenticatedFetch = (url, init = {}) => fetch(url, {
+      ...init,
+      headers: { ...init.headers, cookie },
+    })
 
     // The index document is the REAL web host's per-request output: it carries
     // the fresh boot manifest plus the desktop index taps.
-    const index = await fetch(`${origin}/`)
+    const index = await authenticatedFetch(`${origin}/`)
     assert.equal(index.status, 200)
     const html = await index.text()
     assert.match(html, /(?:window\.__DSH_BOOT__|globalThis\["__DSH_BOOT__"\])/)
@@ -128,9 +154,9 @@ async function runSidecarSmoke(launchMode) {
 
     // The /api transport and the system bridge roundtrip over real HTTP.
     const pickBody = Buffer.from(JSON.stringify({
-      type: 'client-request', rpcId: 'desktop-picker', method: 'host.pickDirectory', payload: {},
+      type: 'client-request', rpcId: 'desktop-picker', method: 'directoryPicker/pick', payload: { args: {} },
     }))
-    const pickPromise = fetch(`${origin}/api/host.pickDirectory`, {
+    const pickPromise = authenticatedFetch(`${origin}/api/directoryPicker/pick`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: pickBody,
@@ -141,13 +167,13 @@ async function runSidecarSmoke(launchMode) {
     const pickerResponse = await pickPromise
     assert.equal(pickerResponse.status, 200)
     assert.deepEqual((await pickerResponse.json()).result, {
-      ok: true, value: { path: null },
+      ok: true, value: null,
     })
 
     const openBody = Buffer.from(JSON.stringify({
-      type: 'client-request', rpcId: 'desktop-open', method: 'host.openPath', payload: { path: '/tmp' },
+      type: 'client-request', rpcId: 'desktop-open', method: 'settings/openSettingsDocument', payload: { args: {} },
     }))
-    const openPromise = fetch(`${origin}/api/host.openPath`, {
+    const openPromise = authenticatedFetch(`${origin}/api/settings/openSettingsDocument`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: openBody,
@@ -157,14 +183,17 @@ async function runSidecarSmoke(launchMode) {
     send({ kind: 'system-response', id: openRequest.id, ok: true, payload: null })
     const openResponse = await openPromise
     assert.equal(openResponse.status, 200)
+    assert.deepEqual((await openResponse.json()).result, {
+      ok: true, value: { opened: true },
+    })
 
     // Cancellation propagates end to end: aborting the page fetch tears down
     // the in-flight system request, which announces itself as system-cancel.
     const cancelController = new AbortController()
     const cancelledBody = Buffer.from(JSON.stringify({
-      type: 'client-request', rpcId: 'desktop-picker-cancelled', method: 'host.pickDirectory', payload: {},
+      type: 'client-request', rpcId: 'desktop-picker-cancelled', method: 'directoryPicker/pick', payload: { args: {} },
     }))
-    const cancelledPromise = fetch(`${origin}/api/host.pickDirectory`, {
+    const cancelledPromise = authenticatedFetch(`${origin}/api/directoryPicker/pick`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: cancelledBody,
@@ -185,7 +214,7 @@ async function runSidecarSmoke(launchMode) {
 
     // The session-export endpoint answers over the plain loopback transport
     // (the Rust shell streams it to disk itself — no protocol stream carrier).
-    const exportResponse = await fetch(`${origin}/api/session.export?sessionId=smoke-missing`)
+    const exportResponse = await authenticatedFetch(`${origin}/api/session.export?sessionId=smoke-missing`)
     assert.equal(typeof exportResponse.status, 'number')
 
     send({ kind: 'request', id: 8, method: 'shutdown', payload: {} })

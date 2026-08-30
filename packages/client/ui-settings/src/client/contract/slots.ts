@@ -9,6 +9,7 @@
  * ui-settings-general too.
  */
 
+import type {} from '@deepseek-ai/dsh-client-ui-slots'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
@@ -22,10 +23,9 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      */
     'settings.trigger': { kind: 'single'; scope: 'root'; owner: SettingsTriggerOwnerProps }
     /**
-     * Optional badge seat rendered immediately right of the settings trigger
-     * button (same owner share: sidebar width state). Absent contribution
-     * renders nothing. Owned by desktop surfaces for the update badge; the
-     * web surface leaves it empty.
+     * Optional badge seat rendered after the settings trigger in the sidebar
+     * foot stack (same owner share: sidebar width state). Absent contribution
+     * renders nothing. Desktop owns the update badge; Web leaves the seat empty.
      */
     'settings.update': { kind: 'single'; scope: 'root'; owner: SettingsTriggerOwnerProps }
     /**

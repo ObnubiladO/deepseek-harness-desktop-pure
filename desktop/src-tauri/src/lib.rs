@@ -13,7 +13,7 @@ use std::{
 
 use rmpv::Value;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use tauri::{AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{webview::Cookie, AppHandle, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -544,17 +544,30 @@ fn validate_export_request(
     Ok(url)
 }
 
-/** Fetch the session export directly from the current web host and stream it to disk. */
+/** Serialize the current WebView cookies for one native same-origin export request. */
+fn export_cookie_header(cookies: &[Cookie<'_>]) -> Result<String, String> {
+    let header = cookies
+        .iter()
+        .map(|cookie| format!("{}={}", cookie.name(), cookie.value()))
+        .collect::<Vec<_>>()
+        .join("; ");
+    if header.is_empty() {
+        return Err("Desktop browser session is not authenticated".into());
+    }
+    Ok(header)
+}
+
+/** Fetch the authenticated session export from the current web host and stream it to disk. */
 fn download_export(
-    request: &DesktopHttpRequest,
-    current_origin: &str,
+    url: &Url,
+    cookie_header: &str,
     temp: &Path,
     target: &Path,
 ) -> Result<(), String> {
-    let url = validate_export_request(request, current_origin)?;
     let agent = ureq::AgentBuilder::new().redirects(0).build();
     let response = agent
         .get(url.as_str())
+        .set("Cookie", cookie_header)
         .timeout(EXPORT_TIMEOUT)
         .call()
         .map_err(|error| error.to_string())?;
@@ -583,12 +596,26 @@ async fn desktop_save_session(
         .unwrap()
         .clone()
         .ok_or_else(|| "Desktop web host is not ready".to_string())?;
+    let url = validate_export_request(&request, &current_origin)?;
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Desktop main window is unavailable".to_string())?;
+    let cookies = tokio::task::spawn_blocking({
+        let window = window.clone();
+        let url = url.clone();
+        move || {
+            window
+                .cookies_for_url(url)
+                .map_err(|error| error.to_string())
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())??;
+    let cookie_header = export_cookie_header(&cookies)?;
     let target = tokio::task::spawn_blocking({
         let app = app.clone();
+        let window = window.clone();
         move || {
-            let window = app
-                .get_webview_window("main")
-                .ok_or_else(|| "Desktop main window is unavailable".to_string())?;
             Ok::<_, String>(
                 app.dialog()
                     .file()
@@ -607,11 +634,10 @@ async fn desktop_save_session(
     let target = target.into_path().map_err(|error| error.to_string())?;
     let temp = temporary_export_path(&target);
     let cleanup_temp = temp.clone();
-    let result = tokio::task::spawn_blocking(move || {
-        download_export(&request, &current_origin, &temp, &target)
-    })
-    .await
-    .map_err(|error| error.to_string())?;
+    let result =
+        tokio::task::spawn_blocking(move || download_export(&url, &cookie_header, &temp, &target))
+            .await
+            .map_err(|error| error.to_string())?;
     if result.is_err() {
         let _ = std::fs::remove_file(&cleanup_temp);
     }
@@ -627,7 +653,7 @@ fn temporary_export_path(target: &Path) -> PathBuf {
     target.with_file_name(format!(".{name}.{stamp}.part"))
 }
 
-/** Validate the sidecar readiness message and normalize its loopback origin. */
+/** Validate the sidecar readiness message and preserve its authenticated launch URL. */
 fn parse_ready_url(message: &InboundMessage) -> Result<String, String> {
     if message.protocol_version != Some(PROTOCOL_VERSION) {
         return Err(format!(
@@ -644,18 +670,26 @@ fn parse_ready_url(message: &InboundMessage) -> Result<String, String> {
     let hostname = parsed
         .host_str()
         .ok_or_else(|| "Desktop ready URL has no hostname".to_string())?;
+    let mut query = parsed.query_pairs();
+    let launch_token = query.next();
+    let valid_launch_token = launch_token
+        .as_ref()
+        .is_some_and(|(name, value)| name == "token" && !value.is_empty())
+        && query.next().is_none();
     if parsed.scheme() != "http"
         || !is_loopback_hostname(hostname)
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
         || parsed.path() != "/"
-        || parsed.query().is_some()
+        || !valid_launch_token
         || parsed.fragment().is_some()
         || parsed.port().is_none()
     {
         return Err(format!(
-            "Desktop ready URL must be loopback HTTP with an explicit port: {raw}"
+            "Desktop ready URL must be loopback HTTP with an explicit port and one launch token: {raw}"
         ));
     }
-    Ok(parsed.origin().ascii_serialization())
+    Ok(parsed.into())
 }
 
 /** Own one sidecar generation's event channel and report when it ends. */
@@ -810,7 +844,7 @@ async fn supervise_sidecar(app: &AppHandle) {
                     clear_peer_if_current(&state, &peer);
                     return;
                 }
-                let parsed = Url::parse(&url).expect("validated Desktop origin must parse");
+                let parsed = Url::parse(&url).expect("validated Desktop launch URL must parse");
                 // Publish the new origin before navigating so the live
                 // allowlist accepts this generation's random port.
                 *state.origin.write().unwrap() = Some(parsed.origin().ascii_serialization());
@@ -1063,7 +1097,7 @@ mod tests {
     }
 
     #[test]
-    fn readiness_url_must_be_loopback_http_with_explicit_port() {
+    fn readiness_url_requires_one_loopback_launch_token() {
         let ready = |url: &str| InboundMessage {
             kind: "ready".into(),
             id: None,
@@ -1075,19 +1109,22 @@ mod tests {
             url: Some(url.into()),
         };
         assert_eq!(
-            parse_ready_url(&ready("http://127.0.0.1:5173")).unwrap(),
-            "http://127.0.0.1:5173"
+            parse_ready_url(&ready("http://127.0.0.1:5173/?token=launch-token")).unwrap(),
+            "http://127.0.0.1:5173/?token=launch-token"
         );
         assert_eq!(
-            parse_ready_url(&ready("http://localhost:5173")).unwrap(),
-            "http://localhost:5173"
+            parse_ready_url(&ready("http://localhost:5173?token=launch-token")).unwrap(),
+            "http://localhost:5173/?token=launch-token"
         );
         for bad in [
-            "http://127.0.0.1",           // no explicit port
-            "https://127.0.0.1:5173",     // not http
-            "http://192.168.1.10:5173",   // not loopback
-            "http://127.0.0.1:5173/path", // not the origin root
-            "http://127.0.0.1:5173?x=1",  // query
+            "http://127.0.0.1:5173",                    // missing launch token
+            "http://127.0.0.1/?token=x",                // no explicit port
+            "https://127.0.0.1:5173/?token=x",          // not http
+            "http://192.168.1.10:5173/?token=x",        // not loopback
+            "http://127.0.0.1:5173/path?token=x",       // not the origin root
+            "http://127.0.0.1:5173/?token=",            // empty launch token
+            "http://127.0.0.1:5173/?token=x&extra=true", // extra query field
+            "http://user@127.0.0.1:5173/?token=x",      // userinfo
         ] {
             assert!(parse_ready_url(&ready(bad)).is_err(), "must reject {bad}");
         }
@@ -1113,6 +1150,72 @@ mod tests {
     }
 
     #[test]
+    fn export_cookie_header_preserves_the_http_only_webview_session() {
+        let cookies = [
+            Cookie::build(("dsh-session", "signed-value"))
+                .http_only(true)
+                .build(),
+            Cookie::build(("preference", "compact")).build(),
+        ];
+
+        assert_eq!(
+            export_cookie_header(&cookies).unwrap(),
+            "dsh-session=signed-value; preference=compact"
+        );
+        assert!(export_cookie_header(&[]).is_err());
+    }
+
+    #[test]
+    fn export_download_sends_the_webview_cookie_and_publishes_the_file() {
+        use std::io::{Read, Write};
+        use std::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0_u8; 1024];
+            while !request.windows(4).any(|window| window == b"\r\n\r\n") {
+                let read = stream.read(&mut chunk).unwrap();
+                if read == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..read]);
+            }
+            let request = String::from_utf8(request).unwrap().to_ascii_lowercase();
+            assert!(request.contains("cookie: dsh-session=signed-value\r\n"));
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\nzip")
+                .unwrap();
+        });
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "deepdive-export-test-{}-{stamp}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let target = root.join("session.zip");
+        let temp = root.join(".session.zip.part");
+        let url = Url::parse(&format!(
+            "http://{address}/api/session.export?sessionId=test"
+        ))
+        .unwrap();
+
+        download_export(&url, "dsh-session=signed-value", &temp, &target).unwrap();
+
+        server.join().unwrap();
+        assert_eq!(std::fs::read(&target).unwrap(), b"zip");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn export_request_must_target_the_current_sidecar_endpoint() {
         let request = |method: &str, url: &str| DesktopHttpRequest {
             method: method.into(),
@@ -1128,6 +1231,13 @@ mod tests {
             "http://127.0.0.1:6291",
         )
         .is_ok());
+        let mut injected_header = request(
+            "GET",
+            "http://127.0.0.1:6291/api/session.export?sessionId=test",
+        );
+        injected_header
+            .headers
+            .insert("Cookie".into(), "untrusted".into());
         for invalid in [
             request(
                 "GET",
@@ -1138,6 +1248,7 @@ mod tests {
                 "POST",
                 "http://127.0.0.1:6291/api/session.export?sessionId=test",
             ),
+            injected_header,
         ] {
             assert!(validate_export_request(&invalid, "http://127.0.0.1:6291").is_err());
         }

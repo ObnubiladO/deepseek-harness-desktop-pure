@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md
-2026-08-22-desktop-upstream-ancestry.md: 934b2968fa6178360164e667922a961b263fbeb0
-2026-08-22-desktop-upstream-ancestry.zh.md: 71c22ffa3220a9aa11835376bfe8124a8e137180
+2026-08-22-desktop-upstream-ancestry.md: d1a32343db86ff3367ad43a84bcb22bca3febc3a
+2026-08-22-desktop-upstream-ancestry.zh.md: 9511a4fa0728bed728b3af4074757e58c39faa35
