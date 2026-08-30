@@ -450,12 +450,12 @@ window.__ModuleLoader__.load({
     }
 
     // ── plugin body ────────────────────────────────────────────────────────
-    const inject = [];
+    // Cordis must wait for both services before running this plugin.
+    const inject = ["locale", "slots"];
 
     function apply(ctx) {
-      const locale = ctx.get("locale");
-      const slots = ctx.get("slots");
-      if (locale === undefined || slots === undefined) return;
+      const locale = ctx.locale;
+      const slots = ctx.slots;
       ctx.effect(() => locale.register(NS, { zh, en }), "desktop-client-ui: dictionaries");
       ctx.effect(
         () => installDesktopDropFeedback(

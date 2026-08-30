@@ -356,7 +356,12 @@ test('Desktop client UI package ships the dsh.client contract', () => {
 
   assert.equal(clientUi.dsh.client.platform, 'web')
   assert.equal(clientUi.exports['./client'].default, './lib/client.js')
-  assert.ok(clientUi.dsh.client.inject.includes('@deepseek-ai/dsh-client-ui-settings'))
+  assert.deepEqual(clientUi.dsh.client.inject, [
+    '@deepseek-ai/dsh-client-locale',
+    '@deepseek-ai/dsh-client-ui-renderer',
+    '@deepseek-ai/dsh-client-ui-settings',
+  ])
+  assert.match(client, /const inject = \["locale", "slots"\]/)
   assert.ok(Object.keys(runtime.dependencies ?? {}).includes('@deepseek-ai/dsh-desktop-client-ui'))
   // Identity facts the About section surfaces.
   assert.equal(runtime.repository?.url, 'https://github.com/cipherTing/deepseek-harness-desktop-pure')

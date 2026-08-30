@@ -73,6 +73,7 @@ function loadClientUi({
   releaseVersion = '0.2.0',
   releaseBody = '## 更新日志\n\n- 新增更新弹窗。',
   userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+  activate = true,
 } = {}) {
   const releaseTag = `v${releaseVersion}`
   dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
@@ -154,13 +155,48 @@ function loadClientUi({
     inject: (_name, register) => register(),
     register: (entry, component) => { components.set(entry.name, component); return () => {} },
   }
-  plugin.apply({
+  const context = {
+    locale,
+    slots,
     effect: (install) => install(),
     get: (name) => name === 'locale' ? locale : name === 'slots' ? slots : undefined,
-  })
+  }
+  if (activate) plugin.apply(context)
   const t = locale.bind()
-  return { components, t }
+  return { components, t, locale, slots, plugin }
 }
+
+test('Desktop client UI waits for locale and slots before registering its contributions', async () => {
+  const { components, locale, slots, plugin } = loadClientUi({ activate: false })
+  assert.deepEqual(plugin.inject, ['locale', 'slots'])
+
+  // Use the built Cordis runtime used by the Desktop sidecar; a hand-written
+  // context would not prove that a missing provider parks the plugin fiber.
+  const { Context } = await import(new URL(
+    '../src-tauri/rt/node_modules/@deepseek-ai/cordis/lib/index.js',
+    import.meta.url,
+  ))
+  const ctx = new Context()
+  const fiber = ctx.plugin({ inject: plugin.inject, apply: plugin.apply })
+  try {
+    await Promise.resolve()
+    assert.equal(components.size, 0)
+
+    ctx.provide('locale', locale)
+    await Promise.resolve()
+    assert.equal(components.size, 0)
+
+    ctx.provide('slots', slots)
+    await fiber
+    assert.deepEqual([...components.keys()], [
+      'settings.section',
+      'settings.update',
+      'sidebar.brand.name',
+    ])
+  } finally {
+    await fiber.dispose()
+  }
+})
 
 test('update badge opens release details only after the user clicks it', async () => {
   const notes = '## 更新日志\n\n- 支持展示 GitHub 更新内容。\n- 第二条更新。'
