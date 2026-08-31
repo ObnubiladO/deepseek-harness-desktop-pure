@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-desktop-runtime",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -63,6 +63,7 @@
     "@deepseek-ai/dsh-subprocess": "workspace:^",
     "@deepseek-ai/dsh-system-prompt": "workspace:^",
     "@deepseek-ai/dsh-timeout": "workspace:^",
+    "@deepseek-ai/dsh-util-time": "workspace:^",
     "@deepseek-ai/dsh-workflow": "workspace:^",
     "@msgpack/msgpack": "3.1.3"
   }

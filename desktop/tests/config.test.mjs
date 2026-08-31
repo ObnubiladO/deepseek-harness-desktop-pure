@@ -393,7 +393,9 @@ test('Desktop update affordance stacks below settings and follows theme contrast
   const settingsCss = readFileSync(
     new URL('../../packages/client/ui-settings-general/src/client/SettingsRoot.module.css', import.meta.url), 'utf8')
   const clientUi = readFileSync(new URL('../client-ui/src/client.js', import.meta.url), 'utf8')
-  assert.match(settingsCss, /\.triggerRow\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s)
+  // The connection indicator now shares the outer row; the fork-owned update
+  // seat remains below the trigger inside its dedicated column.
+  assert.match(settingsCss, /\.triggerColumn\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s)
   assert.match(clientUi, /\.dab-badge\{position:static/)
   assert.match(clientUi, /require\("@deepseek-ai\/dsh-client-ui-primitives"\)/)
   assert.match(clientUi, /\.dab-startLink\{[^}]*background:var\(--dsw-alias-button-primary-fill\);[^}]*color:var\(--dsw-alias-label-primary-foreground\)/)
