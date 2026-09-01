@@ -24,7 +24,7 @@ The only permitted `-s ours` exception is the one-time, tree-preserving ancestry
 
 Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, require `git merge-base --is-ancestor <verified-upstream-sha> HEAD`, and require `git rev-list --count HEAD..<verified-upstream-sha>` to print `0`. For a rebase-style cycle, also require the final tree to match the verified manual integration commit; ancestry and counts do not prove content synchronization.
 
-Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.2-alpha.2`, version `0.1.2-alpha.2`). This traceability does not change the independent Desktop version.
+Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.2-alpha.3`, version `0.1.2-alpha.3`). This traceability does not change the independent Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
@@ -115,7 +115,6 @@ packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
   interaction/ approval/interaction capabilities, permission, commands, ask-user
   boot/        shared profile/application boot glue
   sdk/         JSON-RPC protocol + TypeScript client/server
-  examples/    reusable composition bundles (agent-spine)
   experimental/ private prototypes excluded from official releases
   support/     dev/test infrastructure
   util/        zero-dependency utilities

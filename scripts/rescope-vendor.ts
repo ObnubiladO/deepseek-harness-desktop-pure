@@ -244,23 +244,6 @@ const EXACT_EDITS: readonly ExactEdit[] = [
     expect: 1,
   },
   {
-    // The rescoped repository intentionally uses its package name and current
-    // aligned prose instead of the pre-rescope upstream line. Keep both complete
-    // forms paired when this wording changes so --apply and --reverse stay exact.
-    id: 'agent-spine-demo-mounted-tree',
-    file: 'packages/examples/agent-spine-demo/README.md',
-    find: '@cordisjs/plugin-timer                timer service (writes nothing to stdout)',
-    replace: '@deepseek-ai/cordis-plugin-timer      timer service (writes nothing to stdout)',
-    expect: 1,
-  },
-  {
-    id: 'agent-spine-demo-mounted-tree-zh',
-    file: 'packages/examples/agent-spine-demo/README.zh.md',
-    find: '@cordisjs/plugin-timer                timer service (writes nothing to stdout)',
-    replace: '@deepseek-ai/cordis-plugin-timer      timer service (writes nothing to stdout)',
-    expect: 1,
-  },
-  {
     // The root contract claimed vendored packages keep their upstream names.
     id: 'root-agents-vendored-name-contract',
     file: 'AGENTS.md',
