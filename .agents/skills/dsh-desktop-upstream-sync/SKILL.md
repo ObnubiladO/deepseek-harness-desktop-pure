@@ -1,67 +1,93 @@
 ---
 name: dsh-desktop-upstream-sync
-description: Use when checking or synchronizing DeepDive with an upstream DeepSeek Harness tag or commit, including manual conflict integration and an authorized rebase-style rewrite of an unreleased sync branch.
+description: Use when checking or synchronizing DeepDive with an upstream DeepSeek Harness tag or commit, including manual conflict integration and an upstream-rooted release candidate that is later merged into the fork master branch.
 ---
 
 # Synchronize DeepDive with upstream
 
-Synchronize content manually first; choose the final Git topology only after the integrated tree is reviewed and verified. This workflow applies to upstream tag checks, full synchronization cycles, and unreleased sync-branch rewrites. It never authorizes rewriting published `master` or release tags.
+DeepDive is an independent Desktop distribution that follows official Harness releases while retaining its Desktop packaging and integrations. Each synchronization has two Git artifacts:
 
-## Hard rule: manual integration precedes rebase topology
+- a reviewed manual integration tree, which proves how upstream changes and fork-owned changes were reconciled;
+- an upstream-rooted candidate, which carries the reviewed fork delta above the verified upstream target and is used for validation and release preparation.
 
-Never reset the active fork branch to the upstream target, replace the whole tree with upstream, or reconstruct the fork from a directory allowlist and call that synchronization. Those operations hide conflicts and skip review of upstream changes that overlap the fork.
+The candidate is then merged into the continuous fork `master` line. This workflow does not authorize pushing, force-pushing, mirroring tags, merging `master`, or publishing a release; obtain authorization for each requested remote action.
 
-An upstream-based final branch is permitted only after a separate manual integration tree exists. The final rebased or rebuilt tree must match that reviewed integration result, except for explicitly documented history-only metadata.
+## Manual integration first
 
-## Protect and verify the starting points
+Never reset an existing fork line to the upstream target as a substitute for synchronization, replace the whole tree with upstream, reconstruct it from a directory allowlist, or use `-s ours` to bypass content review. After manual review, creating or rebuilding a separately named upstream-rooted candidate is allowed and is the required candidate-materialization step. The sole named rc2 ancestry-repair exception is documented in root `AGENTS.md` and is not a routine synchronization mechanism.
 
-1. Fetch the exact upstream tag or commit and confirm its remote SHA; do not trust a pre-existing local tag.
-2. Record the local fork tip and the exact remote branch OID. Create a local backup ref before any history rewrite.
-3. Use a separate temporary branch or worktree for manual integration. Keep the maintainer branch recoverable until the final tree passes verification.
+1. Fetch the exact upstream tag or commit and confirm its remote peeled SHA.
+2. Record the previous fork candidate or destination tip and the exact remote branch OID. Create a local backup ref before any history rewrite.
+3. From the previous reviewed fork tip, run a real no-commit merge of the verified upstream SHA:
 
-## Build the manual integration tree
+   ```sh
+   git merge --no-commit --no-ff <verified-upstream-sha>
+   ```
 
-From the original fork tip, run a real no-commit merge of the verified upstream SHA so Git exposes both conflicts and clean auto-merges:
+4. Resolve textual conflicts and inspect overlapping automatic merges by responsibility. Keep upstream-owned Harness behavior from the verified upstream result unless a concrete current fork rule is an integration blocker. Keep fork-owned branding, Desktop packaging, native integration, and sanctioned seams.
+5. Commit the resolved tree only after its relevant checks pass. Record this commit as the manual integration reference.
 
-```sh
-git merge --no-commit --no-ff <verified-upstream-sha>
-```
+A conflict-free merge still needs review. A source diff or generated artifact check does not prove that the Desktop runtime and UI remain functional.
 
-Resolve and review in responsibility order:
+## Build the upstream-rooted candidate
 
-1. Upstream API, transport, profile, persistence, and client-contract changes that Desktop depends on.
-2. The explicitly sanctioned non-`desktop/` integration seams in root `AGENTS.md`.
-3. Desktop runtime, overlay, bridge, client UI, and sidecar lifecycle.
-4. Rust/Tauri native behavior and platform packaging.
-5. Workflows, workspace metadata, lockfile, generated notices, and bilingual documentation.
+After the manual tree is reviewed, materialize the candidate on the verified upstream commit. Carry only the reviewed fork delta above that target; do not replay obsolete synchronization commits or use an unreviewed path allowlist.
 
-For every overlapping path, decide who owns the behavior before choosing either side. Upstream-owned Harness behavior returns to the verified upstream implementation unless a current fork rule names a concrete integration blocker. Fork-owned branding, Desktop packaging, and native integration stay fork-owned. Resolve bilingual source files before re-recording pairing sidecars. Inspect auto-merged overlapping paths as well as textual conflicts; a conflict-free merge is not proof that the result is correct.
-
-Commit the temporary integration only after its conflicts are resolved and its selected checks pass. That commit is the content reference for the final topology.
-
-## Produce the authorized rebase-style branch
-
-Only an explicitly authorized, unpublished sync branch may be rewritten. Rebase the fork-owned work onto the verified upstream SHA, or materialize the exact verified fork delta on top of that SHA. Drop obsolete historical synchronization commits instead of replaying old upstream trees over the new target.
-
-The final branch must satisfy all of these conditions:
-
-- the verified upstream SHA is an ancestor;
-- the branch contains only fork-owned commits above that target;
-- published `master` and release tags are unchanged;
-- the final tree matches the manual integration commit, with every intentional exception named and reviewed.
-
-Compare the trees directly before testing the final branch:
+The candidate must satisfy:
 
 ```sh
-git diff --exit-code <manual-integration-commit> <rebased-head>
-git merge-base --is-ancestor <verified-upstream-sha> <rebased-head>
-git rev-list --count <rebased-head>..<verified-upstream-sha>
+git merge-base --is-ancestor <verified-upstream-sha> <candidate>
+test "$(git rev-list --count <candidate>..<verified-upstream-sha>)" = 0
+git diff --exit-code <manual-integration-commit> <candidate>
 ```
 
-The behind count must be `0`. An ancestry or count check does not replace the tree comparison or behavior verification.
+The candidate's tree must equal the manual integration tree. Its ahead/behind status is measured against the verified upstream target, not the old remote fork branch:
 
-## Publish safely
+```sh
+git rev-list --left-right --count <verified-upstream-sha>...<candidate>
+```
 
-Update `desktop/UPSTREAM_COMMIT` only after the target and integrated tree are verified. Mirror an upstream tag without changing its target. Before a rewritten push, fetch the fork branch again and use the exact observed OID in `--force-with-lease=<branch>:<oid>`; raw `--force` is forbidden.
+The left-hand count is upstream-only (candidate behind upstream) and must be `0`. The right-hand count is the reviewed fork delta above upstream.
 
-Stop without pushing if the remote branch moved, the final tree differs from the manual integration result, any relevant check fails, or any fork delta remains unexplained.
+Rebase or rebuild is a topology choice, not a rule tied to whether a branch is published. It requires explicit authorization whenever it rewrites a remote branch. Published `master` and release tags are never rewritten; any authorized rewritten push uses the exact observed remote OID with `--force-with-lease`, never raw `--force`.
+
+## Merge the candidate into master
+
+The candidate and `master` have different roles. The candidate is the ahead-only, upstream-rooted validation artifact. `master` is the continuous fork line and keeps its existing history as the first parent.
+
+After the candidate passes the requested checks and the user authorizes landing it, fetch `master` again and merge the candidate normally:
+
+```sh
+git fetch origin master
+git switch master
+master_base=$(git rev-parse HEAD)
+test "$master_base" = "$(git rev-parse origin/master)"
+git merge --no-ff <candidate>
+```
+
+Do not reset or rebase `master` to the upstream target. Capture the merge commit immediately after the merge, before any later governance or release-note commit. Verify that this landing merge was made from the current fork tip and that its tree is exactly the validated candidate:
+
+```sh
+landing_merge=$(git rev-parse HEAD)
+test "$(git rev-parse "$landing_merge^1")" = "$master_base"
+test "$(git rev-parse "$landing_merge^2")" = "$(git rev-parse <candidate>)"
+git diff --exit-code <candidate> "$landing_merge"
+git merge-base --is-ancestor <verified-upstream-sha> "$landing_merge"
+test "$(git rev-list --count "$landing_merge"..<verified-upstream-sha)" = 0
+```
+
+The candidate may be used as the second parent of the `master` merge. Do not replace it with the upstream tag: doing so would make the merge tree depend on a different, unreviewed merge result and would no longer preserve the validated candidate artifact.
+
+Later commits may update documentation, release metadata, or other fork-owned files. Keep the landing-merge checks anchored to `landing_merge`; those later commits do not change which candidate was landed.
+
+When reporting the fork's relationship to upstream, use:
+
+```sh
+git rev-list --left-right --count <verified-upstream-sha>...<master>
+```
+
+The right-hand count is the fork's commits above upstream and the left-hand count is the remaining upstream-only count. `origin/master...master` is only the local/remote delivery comparison; before push it can include the entire synchronized upstream range and must not be called the fork's upstream lead.
+
+## Finish safely
+
+Update `desktop/UPSTREAM_COMMIT` only after the target and integrated tree are verified. If the target is a tag, mirror that exact tag target only after explicit authorization. Stop without pushing if the remote branch moved, the candidate tree differs from the manual integration tree, a relevant check fails, or any fork delta remains unexplained.

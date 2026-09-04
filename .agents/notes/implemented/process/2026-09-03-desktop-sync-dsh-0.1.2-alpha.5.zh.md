@@ -28,7 +28,7 @@ Desktop 只保留 carrier 和两处已批准的非 `desktop/` 改动：Web 为�
 
 - **静态检查通过后跳过 runtime 和浏览器组装验证**——不采用，因为此前的客户端插件生命周期回归曾让 DeepDive 品牌和 About 入口消失，而源码和 bundle 校验依然通过。
 
-- **rebase 或 force-push 已发布的 `master`**——不采用，因为只有未发布的 `0.1.11` 分支使用基于上游的拓扑。
+- **rebase 或 force-push 已发布的 `master`**——不采用，因为已发布的 `master` 和 release tag 不改写。基于上游的候选拓扑可以单独准备；后续获准落地时，通过正常 merge 保留连续的 `master` 线。
 
 ## Consequences
 

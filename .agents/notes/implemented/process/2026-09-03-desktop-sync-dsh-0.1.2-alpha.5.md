@@ -28,7 +28,7 @@ Desktop retains only its carrier and the two approved non-Desktop additions: the
 
 - **Skip runtime and browser assembly checks after static checks pass** — rejected because a prior client-plugin lifecycle regression left the DeepDive brand and About entry absent while source and bundle checks still passed.
 
-- **Rebase or force-push published `master`** — rejected because only the unpublished `0.1.11` branch uses the upstream-based topology.
+- **Rebase or force-push published `master`** — rejected because published `master` and release tags are not rewritten. The upstream-rooted candidate topology is prepared separately; an authorized later landing preserves the continuous `master` line through a normal merge.
 
 ## Consequences
 
