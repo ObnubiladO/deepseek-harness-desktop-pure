@@ -138,3 +138,5 @@ Host 路由是业务拥有的精确 Fetch contribution。Connection 应用 Host/
 下载路由刻意返回字节，而不是 Host 路径。未来如需导出到 Host 路径，必须新增独立 API，并明确目标位置的所有权。
 
 </details>
+
+**运行时不变式：** 不发布伴生入口。Connection 与 command registry 持有两个注册，每次 export 直接读取权威 Session service。
