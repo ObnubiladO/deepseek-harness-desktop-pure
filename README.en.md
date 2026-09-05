@@ -24,7 +24,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/cipherTing/deepseek-harness-desktop-pure" alt="MIT License"></a>
 </p>
 
-<p align="center"><a href="README.md">简体中文</a> · English</p>
+<p align="center">English · <a href="README.zh-CN.md">简体中文</a></p>
 
 > **Independent distribution**
 >
