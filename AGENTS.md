@@ -24,7 +24,7 @@ Before declaring synchronization complete, fetch the exact upstream ref, confirm
 
 Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never raw `--force`.
 
-Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.2-rc.1`, version `0.1.2-rc.1`). This traceability does not change the independent Desktop version.
+Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.3-alpha.1`, version `0.1.3-alpha.1`). This traceability does not change the independent Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
@@ -72,9 +72,9 @@ The sanctioned non-`desktop/` changes are the single root `settings.update` seat
 
 DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.md](docs/architecture.md) before changing `packages/`; follow [docs/AGENTS.md](docs/AGENTS.md) for documentation.
 
-## Pre-release stance: foundation over blast radius
+## Pre-stable APIs and released Session data
 
-**Remove at the first tagged release.** Until then, prefer correct foundations to compatibility shims: rename or repackage freely and update every reference. Backends reject old on-disk formats. SQLite uses monotonic `SCHEMA_VERSION`; `dsh-session` keeps `SESSION_FORMAT_VERSION` at `0` with no compatibility promise.
+Public APIs are pre-stable; update every consumer. Released Session JSONL follows [adjacent migration](.agents/notes/implemented/architecture/2026-08-31-released-session-format-migrations.md): body reads may add a version-named successor but never move, overwrite, or delete committed generations; predecessors imply neither fallback nor downgrade support. SQLite domains use monotonic `SCHEMA_VERSION`.
 
 **Application launch.** Only `dsh` profiles launch supported Node apps; package bins, demos, and public SDK argv escapes are forbidden ([rule](docs/architecture.md#application-launch)).
 

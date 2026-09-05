@@ -109,6 +109,25 @@ async function runSidecarSmoke(launchMode) {
       headers: { ...init.headers, cookie },
     })
 
+    // Exercise the Models page's real discovery route against the deployed catalog.
+    const modelsResponse = await authenticatedFetch(`${origin}/api/llm/discoverModels`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        type: 'client-request', rpcId: 'desktop-codex-models', method: 'llm/discoverModels',
+        payload: { args: { settingsNs: 'llm-pi-ai', request: { provider: 'openai-codex' } } },
+      }),
+    })
+    assert.equal(modelsResponse.status, 200)
+    const modelsResult = (await modelsResponse.json()).result
+    assert.equal(modelsResult.ok, true, JSON.stringify(modelsResult))
+    const astra = modelsResult.value.find(model => model.id === 'gpt-6-astra')
+    assert.ok(astra, 'bundled Codex catalog must offer Astra')
+    assert.equal(astra.name, 'GPT-6 Astra')
+    assert.ok(astra.contextWindow > 0)
+    assert.ok(astra.maxTokens > 0)
+    assert.ok(modelsResult.value.some(model => model.id === 'gpt-5.6-sol'))
+
     // The index document is the REAL web host's per-request output: it carries
     // the fresh boot manifest plus the desktop index taps.
     const index = await authenticatedFetch(`${origin}/`)
