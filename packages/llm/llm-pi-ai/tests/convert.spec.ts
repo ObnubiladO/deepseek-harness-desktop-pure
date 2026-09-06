@@ -742,6 +742,28 @@ describe('toStreamChunks', () => {
     })
   })
 
+  it.each([false, true])('maps a Codex close after streamed text with caller aborted=%s', async (aborted) => {
+    const partial = assistant({ api: 'openai-codex-responses', provider: 'openai-codex' })
+    const error = { ...partial, stopReason: 'error' as const, errorMessage: 'WebSocket closed 1006' }
+    const controller = new AbortController()
+    if (aborted) controller.abort()
+
+    const chunks = await collect(toStreamChunks(feed(
+      { type: 'text_start', contentIndex: 0, partial },
+      { type: 'text_delta', contentIndex: 0, delta: 'partial response', partial },
+      { type: 'error', reason: 'error', error },
+    ), undefined, controller.signal))
+
+    expect(chunks[1]).toEqual({ type: 'text-delta', index: 0, text: 'partial response' })
+    expect(chunks.at(-1)).toEqual({
+      type: 'finish',
+      reason: {
+        kind: aborted ? 'aborted' : 'error',
+        failure: { message: 'WebSocket closed 1006', code: aborted ? 'ABORTED' : 'TRANSPORT' },
+      },
+    })
+  })
+
   it('rejects a stream that ends without done or error', async () => {
     await expect(collect(toStreamChunks(feed({ type: 'start', partial: assistant() }))))
       .rejects.toThrow(/without done\/error/)
@@ -840,6 +862,8 @@ describe('mapStopReason / mapUsage', () => {
     'other side closed',
     'HTTP2 request did not get a response',
     'WebSocket closed unexpectedly',
+    'WebSocket closed 1006',
+    'WebSocket closed 1006 abnormal closure',
     // undici flattens a mid-stream socket drop to this bare word (its SocketError
     // cause is discarded upstream before it reaches us).
     'terminated',
@@ -852,6 +876,18 @@ describe('mapStopReason / mapUsage', () => {
   ])('maps pi-ai transport wording %j', (errorMessage) => {
     expect(mapStopReason(assistant({ stopReason: 'error', errorMessage })))
       .toMatchObject({ kind: 'error', failure: { code: 'TRANSPORT' } })
+  })
+
+  it.each([
+    ['WebSocket closed 1008', 'PI_AI_ERROR'],
+    ['WebSocket closed 1009 message too big', 'PI_AI_ERROR'],
+    ['WebSocket closed 10060', 'PI_AI_ERROR'],
+    ['WebSocket closed 1006 HTTP 401', 'AUTH'],
+    ['WebSocket closed 1006 insufficient_quota', 'QUOTA'],
+    ['WebSocket closed 1006 invalid request', 'INVALID_REQUEST'],
+  ])('preserves non-transport classification for %j', (errorMessage, code) => {
+    expect(mapStopReason(assistant({ stopReason: 'error', errorMessage })))
+      .toEqual({ kind: 'error', failure: { message: errorMessage, code } })
   })
 
   it('uses pi-ai provider-specific overflow classification without losing rate-limit exclusions', () => {

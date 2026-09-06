@@ -12,6 +12,8 @@ Status: implemented
 
 ## 决策
 
+Codex Responses WebSocket 消息 `WebSocket closed 1006`（可附带原因）也映射为 `TRANSPORT`。其他数字关闭码不会一概归为瞬时故障。认证、配额和无效请求检查保留优先级，调用方取消仍为 `ABORTED`。转换器回归测试覆盖文本增量后的关闭、消息保留、取消以及非传输错误排除。
+
 - `classifyPiAiError` 识别另外两种传输层措辞，并将两者都映射为 `TRANSPORT`：
   - 流式输出中途的套接字断开，呈现为裸的 `terminated`（undici）或 `Premature close`（Node 流层）；
   - 在终止事件之前被截断的流，每个 pi-ai 提供方各自抛出不同措辞（`Anthropic stream ended before message_stop`、`… before a terminal response event`、`… ended without a terminal event`、`Stream ended without finish_reason`），统一按 `stream ended before/without` 匹配。

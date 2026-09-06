@@ -12,6 +12,8 @@ The detail loss is upstream and unrecoverable in the adapter: pi-ai reduces a ca
 
 ## Decision
 
+The Codex Responses WebSocket message `WebSocket closed 1006`, optionally followed by a reason, also maps to `TRANSPORT`. Other numeric close codes are not blanket-classified as transient. Authentication, quota, and invalid-request checks retain precedence, and caller cancellation remains `ABORTED`. The converter regression covers a close after a text delta, message preservation, cancellation, and non-transport exclusions.
+
 - `classifyPiAiError` recognizes two more transport wordings and maps both to `TRANSPORT`:
   - a mid-stream socket drop rendered as a bare `terminated` (undici) or `Premature close` (Node stream layer);
   - a stream truncated before its terminal event, which each pi-ai provider throws with its own wording (`Anthropic stream ended before message_stop`, `… before a terminal response event`, `… ended without a terminal event`, `Stream ended without finish_reason`), matched on `stream ended before/without`.
