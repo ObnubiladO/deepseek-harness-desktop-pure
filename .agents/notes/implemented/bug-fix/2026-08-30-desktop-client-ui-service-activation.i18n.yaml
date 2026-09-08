@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-30-desktop-client-ui-service-activation.md
-2026-08-30-desktop-client-ui-service-activation.md: 04bee58ff3ae9d5b7c72a8f7cc230c6c823599ff
-2026-08-30-desktop-client-ui-service-activation.zh.md: 1408544292dd689c6cbfb91b3d1b7b3cd3affb33
+2026-08-30-desktop-client-ui-service-activation.md: 3793a78c310a9e5b7c62e0582fff255e9092e225
+2026-08-30-desktop-client-ui-service-activation.zh.md: 9679288e19fde0ce53827b041f1f3699c6d86a12

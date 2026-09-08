@@ -2,6 +2,8 @@
 
 Status: implemented
 
+Superseded for dependency selection by [the alpha.2 synchronization](2026-09-08-desktop-sync-dsh-0.1.3-alpha.2.md), which removes this catalog patch.
+
 English | [中文](2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.zh.md)
 
 ## Problem
@@ -12,7 +14,7 @@ The Codex provider catalog bundled with `dsh-v0.1.3-alpha.1` omits `gpt-6-astra`
 
 The Desktop candidate integrates upstream `dsh-v0.1.3-alpha.1` at `d347e703908d0406b7a7ef80e3a0e594d86b2215` through a reviewed manual merge from fork `0f32029dbf044dfcb6a0ee46ae97ac8c46e01856`. Desktop uses independent test version `0.1.12-astra.1`. The merge preserves Desktop native session saving and the update seat while adopting upstream handle-based session export and canonical log filenames.
 
-The [package patch](../../../../patches/@earendil-works__pi-ai@0.84.2.patch) replaces only the Codex catalog JSON in `@earendil-works/pi-ai@0.84.2` with the exact file published in `0.85.1`. All seven existing entries are unchanged; Astra is the only addition. The pnpm lockfile records the patch hash. The source tarball has npm integrity `sha512-+VgVIJDkDO2efYJKEEqvPTH4zmnIaXdAppGbO+vKFA9qy5PdhFiAenuFAkU+oiCSfOC4dMHDyrjdQeL4ZoC5CQ==`.
+The [package patch](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/blob/14f453e95d700dabb839d70d3db8501fa634de3a/patches/@earendil-works__pi-ai@0.84.2.patch) replaces only the Codex catalog JSON in `@earendil-works/pi-ai@0.84.2` with the exact file published in `0.85.1`. All seven existing entries are unchanged; Astra is the only addition. The pnpm lockfile records the patch hash. The source tarball has npm integrity `sha512-+VgVIJDkDO2efYJKEEqvPTH4zmnIaXdAppGbO+vKFA9qy5PdhFiAenuFAkU+oiCSfOC4dMHDyrjdQeL4ZoC5CQ==`.
 
 ## Alternatives considered
 

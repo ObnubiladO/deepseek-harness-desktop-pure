@@ -2,6 +2,8 @@
 
 Status: implemented
 
+依赖选择已由 [alpha.2 同步](2026-09-08-desktop-sync-dsh-0.1.3-alpha.2.zh.md)取代；该同步移除了此目录补丁。
+
 [English](2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.md) | 中文
 
 ## Problem
@@ -12,7 +14,7 @@ Status: implemented
 
 Desktop 候选版本从分叉提交 `0f32029dbf044dfcb6a0ee46ae97ac8c46e01856` 出发，通过经过审查的手动合并集成上游 `dsh-v0.1.3-alpha.1`，其提交为 `d347e703908d0406b7a7ef80e3a0e594d86b2215`。Desktop 使用独立测试版本 `0.1.12-astra.1`。合并保留 Desktop 原生会话保存和更新入口，同时采用上游基于句柄的会话导出与规范日志文件名。
 
-[依赖补丁](../../../../patches/@earendil-works__pi-ai@0.84.2.patch) 只将 `@earendil-works/pi-ai@0.84.2` 中的 Codex 目录 JSON 替换为 `0.85.1` 发布的对应原始文件。原有七个条目保持不变，唯一新增项是 Astra。pnpm 锁文件记录补丁哈希。源压缩包的 npm 完整性值为 `sha512-+VgVIJDkDO2efYJKEEqvPTH4zmnIaXdAppGbO+vKFA9qy5PdhFiAenuFAkU+oiCSfOC4dMHDyrjdQeL4ZoC5CQ==`。
+[依赖补丁](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/blob/14f453e95d700dabb839d70d3db8501fa634de3a/patches/@earendil-works__pi-ai@0.84.2.patch) 只将 `@earendil-works/pi-ai@0.84.2` 中的 Codex 目录 JSON 替换为 `0.85.1` 发布的对应原始文件。原有七个条目保持不变，唯一新增项是 Astra。pnpm 锁文件记录补丁哈希。源压缩包的 npm 完整性值为 `sha512-+VgVIJDkDO2efYJKEEqvPTH4zmnIaXdAppGbO+vKFA9qy5PdhFiAenuFAkU+oiCSfOC4dMHDyrjdQeL4ZoC5CQ==`。
 
 ## Alternatives considered
 
