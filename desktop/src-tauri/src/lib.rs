@@ -821,6 +821,52 @@ fn monitor_sidecar_exit(peer: Arc<SidecarPeer>, exited: oneshot::Receiver<()>, a
     });
 }
 
+/** Match only Harness browser-login cookies in this application's loopback cookie store. */
+fn is_sidecar_auth_cookie(cookie: &Cookie<'_>) -> bool {
+    let domain = cookie.domain().unwrap_or("").trim_start_matches('.');
+    matches!(domain, "127.0.0.1" | "localhost")
+        && cookie
+            .name()
+            .strip_prefix("dsh-auth-")
+            .is_some_and(|suffix| {
+                suffix.len() == 43
+                    && suffix
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+            })
+}
+
+/** Clear previous random-port logins before exchanging the new sidecar launch token. */
+async fn navigate_sidecar(app: &AppHandle, url: Url) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or_else(|| "Desktop main window is unavailable".to_string())?;
+    // WebView2 cookie reads deadlock on the UI thread; await cleanup before navigation.
+    tokio::task::spawn_blocking(move || {
+        for cookie in window
+            .cookies_for_url(url.clone())
+            .map_err(|error| error.to_string())?
+        {
+            if is_sidecar_auth_cookie(&cookie) {
+                window
+                    .delete_cookie(cookie)
+                    .map_err(|error| error.to_string())?;
+            }
+        }
+        if window
+            .app_handle()
+            .state::<DesktopState>()
+            .exiting
+            .load(Ordering::SeqCst)
+        {
+            return Ok(());
+        }
+        window.navigate(url).map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 /** Bounded respawn after an unexpected exit: retry with backoff, then fail loud. */
 async fn supervise_sidecar(app: &AppHandle) {
     let state = app.state::<DesktopState>();
@@ -848,18 +894,11 @@ async fn supervise_sidecar(app: &AppHandle) {
                 // Publish the new origin before navigating so the live
                 // allowlist accepts this generation's random port.
                 *state.origin.write().unwrap() = Some(parsed.origin().ascii_serialization());
-                let navigation = app
-                    .get_webview_window("main")
-                    .ok_or_else(|| "Desktop main window is unavailable".to_string())
-                    .and_then(|window| window.navigate(parsed).map_err(|error| error.to_string()));
+                let navigation = navigate_sidecar(app, parsed).await;
                 if let Err(error) = navigation {
                     peer.terminate();
                     clear_peer_if_current(&state, &peer);
-                    show_error_and_exit(
-                        app,
-                        format!("DeepDive failed to reconnect:\n{error}"),
-                        1,
-                    );
+                    show_error_and_exit(app, format!("DeepDive failed to reconnect:\n{error}"), 1);
                     return;
                 }
                 monitor_sidecar_exit(peer, exited, app.clone());
@@ -874,11 +913,7 @@ async fn supervise_sidecar(app: &AppHandle) {
             }
         }
     }
-    show_error_and_exit(
-        app,
-        "DeepDive 宿主进程多次重启失败，应用即将退出。",
-        1,
-    );
+    show_error_and_exit(app, "DeepDive 宿主进程多次重启失败，应用即将退出。", 1);
 }
 
 /** Show a modal error on the main thread, then exit with the given code. */
@@ -979,7 +1014,9 @@ pub fn run() {
                         let window = WebviewWindowBuilder::new(
                             &handle,
                             "main",
-                            WebviewUrl::External(parsed),
+                            WebviewUrl::External(
+                                Url::parse("about:blank").expect("valid blank URL"),
+                            ),
                         )
                         .title("DeepDive")
                         .inner_size(1280.0, 820.0)
@@ -999,7 +1036,9 @@ pub fn run() {
                                 .read()
                                 .unwrap()
                                 .clone();
-                            if is_current_sidecar_origin(current.as_deref(), target) {
+                            if target.as_str() == "about:blank"
+                                || is_current_sidecar_origin(current.as_deref(), target)
+                            {
                                 return true;
                             }
                             if target.scheme() == "http" || target.scheme() == "https" {
@@ -1015,7 +1054,19 @@ pub fn run() {
                             .hidden_title(true)
                             .decorations(true);
                         match window.build() {
-                            Ok(_) => monitor_sidecar_exit(peer, exited, handle.clone()),
+                            Ok(_) => {
+                                if let Err(error) = navigate_sidecar(&handle, parsed).await {
+                                    peer.terminate();
+                                    clear_peer_if_current(&state, &peer);
+                                    show_error_and_exit(
+                                        &handle,
+                                        format!("Desktop browser startup failed: {error}"),
+                                        1,
+                                    );
+                                    return;
+                                }
+                                monitor_sidecar_exit(peer, exited, handle.clone());
+                            }
                             Err(error) => {
                                 peer.terminate();
                                 clear_peer_if_current(&state, &peer);
@@ -1117,14 +1168,14 @@ mod tests {
             "http://localhost:5173/?token=launch-token"
         );
         for bad in [
-            "http://127.0.0.1:5173",                    // missing launch token
-            "http://127.0.0.1/?token=x",                // no explicit port
-            "https://127.0.0.1:5173/?token=x",          // not http
-            "http://192.168.1.10:5173/?token=x",        // not loopback
-            "http://127.0.0.1:5173/path?token=x",       // not the origin root
-            "http://127.0.0.1:5173/?token=",            // empty launch token
+            "http://127.0.0.1:5173",                     // missing launch token
+            "http://127.0.0.1/?token=x",                 // no explicit port
+            "https://127.0.0.1:5173/?token=x",           // not http
+            "http://192.168.1.10:5173/?token=x",         // not loopback
+            "http://127.0.0.1:5173/path?token=x",        // not the origin root
+            "http://127.0.0.1:5173/?token=",             // empty launch token
             "http://127.0.0.1:5173/?token=x&extra=true", // extra query field
-            "http://user@127.0.0.1:5173/?token=x",      // userinfo
+            "http://user@127.0.0.1:5173/?token=x",       // userinfo
         ] {
             assert!(parse_ready_url(&ready(bad)).is_err(), "must reject {bad}");
         }
@@ -1147,6 +1198,31 @@ mod tests {
             Some("http://127.0.0.1:6291"),
             &current
         ));
+    }
+
+    #[test]
+    fn startup_cleanup_only_matches_loopback_harness_login_cookies() {
+        let name = format!("dsh-auth-{}", "a".repeat(43));
+        for domain in ["127.0.0.1", "localhost", ".localhost"] {
+            assert!(is_sidecar_auth_cookie(
+                &Cookie::build((name.clone(), "secret"))
+                    .domain(domain)
+                    .build()
+            ));
+        }
+        for (name, domain) in [
+            (name.as_str(), "example.com"),
+            ("preference", "127.0.0.1"),
+            ("dsh-auth-unrelated", "127.0.0.1"),
+            (
+                "dsh-auth-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!",
+                "127.0.0.1",
+            ),
+        ] {
+            assert!(!is_sidecar_auth_cookie(
+                &Cookie::build((name, "value")).domain(domain).build()
+            ));
+        }
     }
 
     #[test]
