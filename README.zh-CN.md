@@ -8,9 +8,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.13-astra.1/deepdive-windows-x64-0.1.13-astra.1.exe"><strong>下载 DeepDive</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.14-astra/deepdive-windows-x64-0.1.14-astra.exe"><strong>下载 DeepDive</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.13-astra.1">发行说明</a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.14-astra">发行说明</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/issues">反馈 Desktop 问题</a>
   &nbsp;·&nbsp;
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.13-astra.1"><img src="https://img.shields.io/badge/release-v0.1.13--astra.1-orange" alt="v0.1.13-astra.1 prerelease"></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.14-astra"><img src="https://img.shields.io/badge/release-v0.1.14--astra-orange" alt="v0.1.14-astra prerelease"></a>
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml"><img src="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml/badge.svg" alt="Desktop build"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20Apple%20Silicon%20%7C%20Windows%20x64-0f766e" alt="Supported platforms">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/cipherTing/deepseek-harness-desktop-pure" alt="MIT License"></a>
@@ -42,7 +42,7 @@ DeepDive 将 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 
 ## 下载与安装
 
-下载 [DeepDive v0.1.13-astra.1](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.13-astra.1) 的 Windows x64 安装包，安装完成后启动。此 Astra 预发行版仅提供 Windows x64 构建，没有此版本的 macOS 安装包。
+下载 [DeepDive v0.1.14-astra](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.14-astra) 的 Windows x64 安装包，安装完成后启动。此 Astra 预发行版仅提供 Windows x64 构建，没有此版本的 macOS 安装包。
 
 | 平台 | 安装包 | 支持范围 |
 | --- | --- | --- |
