@@ -24,7 +24,7 @@ Before declaring synchronization complete, fetch the exact upstream ref, confirm
 
 Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never raw `--force`.
 
-Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.3-alpha.2`, version `0.1.3-alpha.2`). This traceability does not change the independent Desktop version.
+Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.1.5-alpha.2`, version `0.1.5-alpha.2`). This traceability does not change the independent Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
