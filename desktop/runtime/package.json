@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/cipherTing/deepseek-harness-desktop-pure"
   },
-  "author": "cipherTing",
+  "author": "ObnubiladO, forked from cipherTing",
   "exports": {
     ".": "./lib/sidecar.mjs",
     "./surface": "./lib/surface.mjs",
