@@ -8,9 +8,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.15-astra/deepdive-windows-x64-0.1.15-astra.exe"><strong>Download DeepDive</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.15-astra.1/deepdive-windows-x64-0.1.15-astra.1.exe"><strong>Download DeepDive</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra">Release notes</a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra.1">Release notes</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/issues">Report a Desktop issue</a>
   &nbsp;·&nbsp;
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra"><img src="https://img.shields.io/badge/release-v0.1.15--astra-orange" alt="v0.1.15-astra prerelease"></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra.1"><img src="https://img.shields.io/badge/release-v0.1.15--astra.1-orange" alt="v0.1.15-astra.1 prerelease"></a>
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml"><img src="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml/badge.svg" alt="Desktop build"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20Apple%20Silicon%20%7C%20Windows%20x64-0f766e" alt="Supported platforms">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/cipherTing/deepseek-harness-desktop-pure" alt="MIT License"></a>
@@ -42,7 +42,7 @@ DeepDive packages the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek
 
 ## Download and install
 
-Download the Windows x64 installer for [DeepDive v0.1.15-astra](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra), then launch it after installation. This Astra prerelease includes only a Windows x64 build; a macOS installer is not available for this version.
+Download the Windows x64 installer for [DeepDive v0.1.15-astra.1](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.15-astra.1), then launch it after installation. This Astra prerelease includes only a Windows x64 build; a macOS installer is not available for this version.
 
 | Platform | Package | Support |
 | --- | --- | --- |

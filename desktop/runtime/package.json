@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-desktop-runtime",
-  "version": "0.1.15-astra",
+  "version": "0.1.15-astra.1",
   "private": true,
   "license": "MIT",
   "type": "module",
