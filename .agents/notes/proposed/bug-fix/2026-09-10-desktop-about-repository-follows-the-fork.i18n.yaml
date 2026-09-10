@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/bug-fix/2026-09-10-desktop-about-repository-follows-the-fork.md
-2026-09-10-desktop-about-repository-follows-the-fork.md: 189997ab9f910e3cae2055de16215383fa9333f9
-2026-09-10-desktop-about-repository-follows-the-fork.zh.md: 1c604eccf4585eb8e47b5b51d40a808eedd055b3
+2026-09-10-desktop-about-repository-follows-the-fork.md: b543ab825bde0103111ec2d7ed0b61c861302c5a
+2026-09-10-desktop-about-repository-follows-the-fork.zh.md: e606f0661d4632d60734af26ea395cb5906f194b

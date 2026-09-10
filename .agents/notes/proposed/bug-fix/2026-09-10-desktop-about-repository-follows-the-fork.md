@@ -14,7 +14,7 @@ The Author row is a separate value and already reads `ObnubiladO, forked from ci
 
 ## Proposal
 
-In the next Desktop build, point the runtime manifest's `repository` at `https://github.com/ObnubiladO/deepseek-harness-desktop-pure`. One value fixes both the visible link and the update source, because both already read it. Credit stays where it is a credit rather than this build's identity: the Author row, the upstream attribution, and the README links that send Desktop issues to the project this fork came from.
+In the next Desktop build, point the runtime manifest's `repository` at `https://github.com/ObnubiladO/deepseek-harness-desktop-pure`. One value fixes both the visible link and the update source, because both already read it. The Author row stays as it is, since attribution is not this field's job.
 
 ## Alternatives considered
 
@@ -24,13 +24,13 @@ In the next Desktop build, point the runtime manifest's `repository` at `https:/
 
 **Keep the upstream repository and stop checking for updates.** Rejected because the update path is built and tested, and it is the only way an installed Desktop learns about a newer Astra build.
 
-**Move the README issue and license links at the same time.** Out of scope: those links deliberately point at the project the fork forked from, and changing them is a separate decision about where Desktop issues belong.
+**Move the README issue links at the same time.** Out of scope, and not a one-line swap: this fork has Issues disabled while the upstream project has them enabled, so the README's "Report a Desktop issue" link is the only destination where a Desktop report can be filed today. Repointing it means enabling Issues here or naming a different tracker, which is a separate decision. The README's "Desktop build" badge has the same shape without that constraint, since it renders the upstream repository's workflow status rather than this fork's runs.
 
 ## Acceptance criteria
 
 - A Desktop build made after the change shows `https://github.com/ObnubiladO/deepseek-harness-desktop-pure` in the About panel's Repository row.
 - The About-page check and the update badge request `https://api.github.com/repos/ObnubiladO/deepseek-harness-desktop-pure/releases/latest`, and the dialog's download action resolves to that release's `deepdive-<platform>-<version>` asset rather than to the release page.
-- `desktop/runtime/package.json` is the only source changed; the Author row and the READMEs keep crediting the original project.
+- `desktop/runtime/package.json` is the only source changed; the Author row and the READMEs stay untouched.
 - `pnpm --filter @deepseek-ai/dsh-desktop test` and `cargo test --manifest-path desktop/src-tauri/Cargo.toml` still pass.
 
 ## Risks
