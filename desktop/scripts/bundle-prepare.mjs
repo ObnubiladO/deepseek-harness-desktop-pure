@@ -12,15 +12,16 @@ if (process.env.DESKTOP_SKIP_BUNDLE === '1') {
   process.exit(0)
 }
 
-const packageManager = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
-
 const steps = [
-  [packageManager, ['run', 'build:harness']],
-  [packageManager, ['run', 'build:runtime']],
-  [packageManager, ['run', 'prepare:node']],
+  ['pnpm', ['run', 'build:harness']],
+  ['pnpm', ['run', 'build:runtime']],
+  ['pnpm', ['run', 'prepare:node']],
 ]
 
 for (const [command, args] of steps) {
+  // Windows resolves the package manager through the command shell: the command name
+  // alone covers a standalone pnpm.exe (CI) and an npm-installed pnpm.cmd (local),
+  // while Node refuses to spawn a .cmd without a shell.
   const result = spawnSync(command, args, {
     shell: process.platform === 'win32',
     stdio: 'inherit',
