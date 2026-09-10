@@ -12,14 +12,19 @@ if (process.env.DESKTOP_SKIP_BUNDLE === '1') {
   process.exit(0)
 }
 
+const packageManager = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+
 const steps = [
-  ['pnpm', ['run', 'build:harness']],
-  ['pnpm', ['run', 'build:runtime']],
-  ['pnpm', ['run', 'prepare:node']],
+  [packageManager, ['run', 'build:harness']],
+  [packageManager, ['run', 'build:runtime']],
+  [packageManager, ['run', 'prepare:node']],
 ]
 
 for (const [command, args] of steps) {
-  const result = spawnSync(command, args, { stdio: 'inherit' })
+  const result = spawnSync(command, args, {
+    shell: process.platform === 'win32',
+    stdio: 'inherit',
+  })
   if (result.error !== undefined) {
     console.error(`bundle:prepare failed to launch ${command}: ${result.error.message}`)
     process.exit(1)
