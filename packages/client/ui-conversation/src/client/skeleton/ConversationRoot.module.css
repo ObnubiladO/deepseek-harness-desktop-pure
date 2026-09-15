@@ -93,6 +93,7 @@
 
 .crumb {
   max-width: 220px;
+  min-width: 0;
   overflow: hidden;
   padding: 4px 8px;
   border: none;
@@ -116,6 +117,13 @@
 }
 
 .crumbCurrent {
+  /* The session's own title is what this header is about, so it takes the width the
+     ancestor crumbs and the trailing header controls leave instead of stopping at the
+     220px ancestor cap: a 43-character title used to render as
+     "Audit CPU Undervolting Auto…" with the header's free space left unused. It is
+     still one nowrap line with an ellipsis, so a genuinely narrow window truncates
+     rather than overflowing. */
+  max-width: none;
   font-weight: 500;
   color: var(--dsw-alias-label-primary);
   cursor: default;
