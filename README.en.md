@@ -118,3 +118,15 @@ macOS packages can be built only on an Apple Silicon Mac, and Windows x64 packag
 Contributions that fix Desktop packaging, platform compatibility, Tauri integration, or the release pipeline are welcome. Read [AGENTS.md](AGENTS.md) before contributing, and keep changes minimal, complete, low-intrusion, and behavior-preserving for Harness.
 
 This fork retains the original project's [MIT License](LICENSE). Third-party dependencies and licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). DeepSeek names and marks remain the property of their respective owners; see [desktop/assets/README.md](desktop/assets/README.md) for the icon source and license.
+
+## Citation
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```

@@ -118,3 +118,15 @@ macOS 安装包只能在 Apple Silicon Mac 上构建，Windows x64 安装包只�
 欢迎修复 Desktop 打包、平台兼容、Tauri 适配和发布链路问题。提交前请阅读 [AGENTS.md](AGENTS.md)，并保持改动最小、完整、低侵入且不改变 Harness 行为。
 
 本 fork 保留 DeepSeek Harness 原项目的 [MIT License](LICENSE)。第三方依赖及许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。DeepSeek 名称与标志归其各自权利人所有；图标来源与许可说明见 [desktop/assets/README.md](desktop/assets/README.md)。
+
+## 引用
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package lets web-client features expose editable preferences backed by the Host settings document without implementing their own transport or schema handling. Each feature gets namespace-scoped reads and writes, atomic multi-field updates, schema validation, and protection against silently overwriting concurrent changes. It also declares the slot types settings surfaces fill — `settings.trigger`/`settings.header`/`settings.close` (chrome), `settings.update` (an optional single seat after the trigger that Web leaves empty and Desktop may occupy with an update badge), `settings.action` (ordered header actions), `settings.section` (one page per feature), `settings.plugins.tab`, and `settings.onboarding` — while rendering no interface itself. Any preference-owning feature can use it without depending on a presentation package; a separate package provides the settings shell.
+This package lets web-client features expose editable preferences backed by the Host settings document without their own transport or schema handling. Features get namespace-scoped reads and writes, atomic multi-field updates, schema validation, and protection from concurrent overwrites. It declares the slot types settings surfaces fill — `settings.trigger`/`settings.header`/`settings.close` (chrome), `settings.update` (an optional single seat after the trigger; Web leaves it empty, Desktop may seat an update badge), `settings.action` (ordered header actions), `settings.section` (one page per feature), `settings.plugins.tab`, and `settings.onboarding` — while rendering no interface itself. Any preference-owning feature can use it without a presentation dependency; a separate package provides the shell.
 
 ## Table of Contents
 

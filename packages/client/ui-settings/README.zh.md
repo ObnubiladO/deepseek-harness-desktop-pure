@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包使 Web 客户端功能能够公开由宿主设置文档支持的可编辑偏好设置，而无需自行实现传输或 schema 处理。每项功能都可按命名空间读写、原子更新多个字段、校验 schema，并避免静默覆盖并发更改。它还声明设置表面填充的 slot 类型——`settings.trigger`/`settings.header`/`settings.close`（界面框架）、`settings.update`（触发控件之后的可选单槽位，Web 留空，Desktop 可用它承载更新徽标）、`settings.action`（有序的标题栏操作）、`settings.section`（每个功能一页）、`settings.plugins.tab` 与 `settings.onboarding`——但自身不渲染任何界面。任何持有偏好设置的功能都可在不依赖呈现包的情况下使用它；设置外壳由单独的包提供。
+本包使 Web 客户端功能能够公开由宿主设置文档支持的可编辑偏好设置，而无需自行实现传输或 schema 处理。功能可获得按命名空间读写、原子更新多个字段、schema 校验，以及避免并发覆盖的保护。它声明设置表面填充的 slot 类型——`settings.trigger`/`settings.header`/`settings.close`（界面框架）、`settings.update`（触发控件之后的可选单槽位；Web 留空，Desktop 可用它承载更新徽标）、`settings.action`（有序的标题栏操作）、`settings.section`（每个功能一页）、`settings.plugins.tab` 与 `settings.onboarding`——但自身不渲染任何界面。任何持有偏好设置的功能都可在不依赖呈现包的情况下使用它；设置外壳由单独的包提供。
 
 ## 目录
 
