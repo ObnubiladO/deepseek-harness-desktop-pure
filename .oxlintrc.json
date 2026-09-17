@@ -37,6 +37,7 @@
         "packages/*/*/tests/**/*.{ts,tsx}",
         "apps/*/src/**/*.{ts,tsx}",
         "apps/*/tests/**/*.{ts,tsx}",
+        "desktop/{bridge,runtime}/src/**/*.ts",
         "examples/**/*.{ts,tsx}",
         "scripts/**/*.{ts,tsx}",
         "website/**/*.{ts,tsx}"
@@ -152,6 +153,7 @@
       "files": [
         "packages/*/*/src/**/*.{ts,tsx}",
         "apps/*/src/**/*.{ts,tsx}",
+        "desktop/{bridge,runtime}/src/**/*.ts",
         "examples/**/*.{ts,tsx}",
         "scripts/**/*.{ts,tsx}",
         "website/**/*.{ts,tsx}"
@@ -231,6 +233,7 @@
       "files": [
         "packages/**/*.{ts,tsx}",
         "apps/**/*.{ts,tsx}",
+        "desktop/{bridge,runtime}/src/**/*.ts",
         "examples/**/*.{ts,tsx}",
         "scripts/**/*.{ts,tsx}",
         "website/**/*.{ts,tsx}"
@@ -253,6 +256,7 @@
       "files": [
         "packages/**/*.{ts,tsx}",
         "apps/**/*.{ts,tsx}",
+        "desktop/{bridge,runtime}/src/**/*.ts",
         "examples/**/*.{ts,tsx}",
         "scripts/**/*.{ts,tsx}",
         "website/**/*.{ts,tsx}"

@@ -13,6 +13,15 @@ const organizationUrl = new RegExp(`\\bgithub\\.com/${organization}(?![a-z0-9-])
 const kitRepositoryUrl = new RegExp(`\\bgithub\\.com/${organization}/libreoffice-kit(?:\\.git)?(?=/|[^a-zA-Z0-9_.-]|$)`, 'g')
 const commitCandidate = /(?<![a-z0-9])[\da-f]{7,40}(?![a-z0-9])/gi
 const excludedPrefixes = ['vendor/', '.agents/notes/archived/']
+/**
+ * Desktop synchronization notes are the one maintained place that must name commits:
+ * the fork's synchronization procedure requires the exact verified upstream commit, the
+ * reviewed manual integration commit, the upstream-rooted candidate, and the landing
+ * commit, because those four ids are what its ancestry checks recompute
+ * (`.agents/skills/dsh-desktop-upstream-sync/SKILL.md`). Every other maintained file
+ * keeps the release-tag and repository-link rule.
+ */
+const excludedFiles = [/^\.agents\/notes\/implemented\/process\/\d{4}-\d{2}-\d{2}-desktop-(?:sync|astra)-/]
 const gitOutputLimit = 64 * 1024 * 1024
 
 /** One prohibited reference in a maintained source file. */
@@ -27,6 +36,7 @@ export interface RepositoryReference {
 
 function isMaintained(file: string): boolean {
   return !excludedPrefixes.some(prefix => file.startsWith(prefix))
+    && !excludedFiles.some(pattern => pattern.test(file))
 }
 
 /**

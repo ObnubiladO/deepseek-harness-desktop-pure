@@ -160,6 +160,7 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     children: {
       'settings.trigger': { kind: 'single', scope: 'root' },
+      'settings.update': { kind: 'single', scope: 'root' },
       'settings.header': { kind: 'single', scope: 'root' },
       'settings.action': { kind: 'list', scope: 'root' },
       'settings.close': { kind: 'single', scope: 'root' },
