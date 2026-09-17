@@ -148,7 +148,7 @@ async function runSidecarSmoke(launchMode) {
     assert.equal(desktopInfo.status, 200)
     const info = await desktopInfo.json()
     assert.equal(typeof info.desktopVersion, 'string')
-    assert.equal(info.repository, 'https://github.com/cipherTing/deepseek-harness-desktop-pure')
+    assert.equal(info.repository, 'https://github.com/ObnubiladO/deepseek-harness-desktop-pure')
     assert.equal(typeof info.author, 'string')
 
     // Plugin bundles come from the live module table with the manifest rev.

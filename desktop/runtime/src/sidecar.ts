@@ -103,6 +103,8 @@ async function serve(): Promise<void> {
     runProfile(options: {
       environment: ReturnType<typeof appBoot.loadLayeredEnv>
       profile: string
+      /** Disk-link module resolution: the Desktop deploy root owns loader-visible packages. */
+      resolutionMode: 'link'
       patchFiles: readonly string[]
       args: readonly string[]
     }): Promise<RunningProfile>
@@ -110,6 +112,13 @@ async function serve(): Promise<void> {
   const running = await profileBoot.runProfile({
     environment: appBoot.loadLayeredEnv('dsh'),
     profile: 'web',
+    // Desktop is a plain-Node caller whose deploy root carries its own
+    // loader-visible packages (the overlay's runtime and client bundles). The
+    // default runtime generation is computed from the upstream `dsh` anchor and
+    // therefore cannot see them; disk links resolve through the profile
+    // fallback this sidecar seeded above, which is also what the packaged
+    // Desktop has always used.
+    resolutionMode: 'link',
     patchFiles: [overlayPath],
     args: ['--host', '127.0.0.1', '--port', '0', '--no-open'],
   })

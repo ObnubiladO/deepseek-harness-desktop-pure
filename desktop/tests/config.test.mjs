@@ -339,9 +339,10 @@ test('Desktop overlay rows match the shipped web composition contract', () => {
   for (const id of ['directory-picker', 'settings-controller']) {
     assert.match(webPatch, new RegExp(`- id: ${id}\\b`), `web patch must define row ${id}`)
   }
-  // Alpha1 keeps the base HMR host and the Web client reload row mounted;
-  // the Desktop overlay must not disable either one.
-  assert.match(basePatch, /- id: hmr\n\s+name: '@deepseek-ai\/cordis-plugin-hmr'/)
+  // The base HMR host and the Web client reload row stay mounted; the Desktop
+  // overlay must not disable either one. Upstream renamed the host package to
+  // `@deepseek-ai/dsh-hmr` and enables the row through the profile context.
+  assert.match(basePatch, /- id: hmr\n\s+name: '@deepseek-ai\/dsh-hmr'/)
   assert.doesNotMatch(overlay, /- id: hmr\n\s+disabled: true/)
   assert.match(webPatch, /- id: client-hmr\n\s+name: '@deepseek-ai\/dsh-client-hmr'/)
   assert.doesNotMatch(overlay, /- id: client-hmr\n\s+disabled: true/)
@@ -363,9 +364,10 @@ test('Desktop client UI package ships the dsh.client contract', () => {
   ])
   assert.match(client, /const inject = \["locale", "slots"\]/)
   assert.ok(Object.keys(runtime.dependencies ?? {}).includes('@deepseek-ai/dsh-desktop-client-ui'))
-  // Identity facts the About section surfaces.
-  assert.equal(runtime.repository?.url, 'https://github.com/cipherTing/deepseek-harness-desktop-pure')
-  assert.equal(typeof runtime.author, 'string')
+  // Identity facts the About section surfaces: the fork hosts this build, so the
+  // Repository row and the update check both read the fork's repository.
+  assert.equal(runtime.repository?.url, 'https://github.com/ObnubiladO/deepseek-harness-desktop-pure')
+  assert.equal(runtime.author, 'ObnubiladO, forked from cipherTing')
   assert.match(client, /"about\.title": "DeepDive"/)
   assert.match(client, /"about\.nav": "关于DeepDive"/)
   assert.match(client, /"about\.desktopVersion": "DeepDive版本"/)

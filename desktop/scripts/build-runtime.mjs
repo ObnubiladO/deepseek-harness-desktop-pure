@@ -45,7 +45,9 @@ await rm(deployDir, { recursive: true, force: true })
 
 async function writeProfileBootBridge() {
   const bin = await readFile(resolve(root, 'apps/cli/lib/bin.js'), 'utf8')
-  const facades = [...bin.matchAll(/import\("\.\/(profile-boot-[^"]+\.js)"\)/g)]
+  // Upstream ships the facade either as a content-hashed chunk or, since the
+  // profile-resolution release, under the stable `profile-boot.js` name.
+  const facades = [...bin.matchAll(/import\("\.\/(profile-boot(?:-[^"]+)?\.js)"\)/g)]
     .map(match => match[1])
   if (facades.length !== 1 || facades[0] === undefined) {
     throw new Error(`expected built dsh bin to import one profile-boot facade, found ${facades.length}`)
