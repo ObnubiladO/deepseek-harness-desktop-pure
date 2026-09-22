@@ -17,6 +17,7 @@
     "tauri": "tauri",
     "dev": "tauri dev",
     "build": "tauri build",
+    "verify:sweep": "node ./scripts/verify-sidecar-sweep.mjs",
     "test": "node --test ./tests/*.test.mjs"
   },
   "dependencies": {
