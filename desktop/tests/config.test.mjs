@@ -197,7 +197,12 @@ test('Desktop loads the loopback web host without custom protocols', () => {
   assert.match(overlay, /surfaceContext: false/)
   assert.match(sidecar, /args: \['--host', '127\.0\.0\.1', '--port', '0', '--no-open'\]/)
   assert.match(sidecar, /connection\.authenticatedUrl\(origin\)/)
-  assert.match(sidecar, /healProfilesModuleFallback\(\{ installAnchor: runtimeManifest \}\)/)
+  // alpha.7 computes plugin resolution from the upstream `dsh` installation and
+  // projects it into `<home>/profiles/node_modules`; the Desktop-owned plugin
+  // packages must occupy that layer before the profile boots.
+  assert.match(sidecar, /linkDesktopPackages\(resolveDshHome\(\)\)/)
+  assert.match(sidecar, /join\(home, 'profiles', 'node_modules'\)/)
+  assert.doesNotMatch(sidecar, /resolutionMode/)
 })
 
 test('Desktop leaves image drops to the browser attachment flow', () => {

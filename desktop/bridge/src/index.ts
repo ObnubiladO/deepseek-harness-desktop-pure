@@ -376,7 +376,10 @@ const carrier: DownloadCarrier = {
   save: (url, filename) => invoke<DesktopSaveResult>('desktop_save_session', {
     request: {
       method: 'GET',
-      url,
+      // Client routes are document-relative since the upstream web-route
+      // change; the native export command validates an absolute same-origin
+      // URL, so resolve against the page the bridge was injected into.
+      url: new URL(url, document.baseURI).href,
       headers: {},
     },
     filename,

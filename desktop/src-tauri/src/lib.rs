@@ -824,16 +824,27 @@ fn monitor_sidecar_exit(peer: Arc<SidecarPeer>, exited: oneshot::Receiver<()>, a
 /** Match only Harness browser-login cookies in this application's loopback cookie store. */
 fn is_sidecar_auth_cookie(cookie: &Cookie<'_>) -> bool {
     let domain = cookie.domain().unwrap_or("").trim_start_matches('.');
-    matches!(domain, "127.0.0.1" | "localhost")
-        && cookie
-            .name()
-            .strip_prefix("dsh-auth-")
-            .is_some_and(|suffix| {
-                suffix.len() == 43
-                    && suffix
-                        .bytes()
-                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
-            })
+    if !matches!(domain, "127.0.0.1" | "localhost") {
+        return false;
+    }
+    // The server mints the bare name now; the legacy suffix arm still sweeps
+    // the per-port cookies earlier 0.1.x launches accumulated.
+    let name = cookie.name();
+    name == "dsh-auth"
+        || name.strip_prefix("dsh-auth-").is_some_and(|suffix| {
+            suffix.len() == 43
+                && suffix
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+        })
+}
+
+/** Select the stale loopback login cookies the startup sweep must delete. */
+fn sidecar_auth_cookies(cookies: Vec<Cookie<'_>>) -> Vec<Cookie<'_>> {
+    cookies
+        .into_iter()
+        .filter(is_sidecar_auth_cookie)
+        .collect()
 }
 
 /** Clear previous random-port logins before exchanging the new sidecar launch token. */
@@ -843,15 +854,15 @@ async fn navigate_sidecar(app: &AppHandle, url: Url) -> Result<(), String> {
         .ok_or_else(|| "Desktop main window is unavailable".to_string())?;
     // WebView2 cookie reads deadlock on the UI thread; await cleanup before navigation.
     tokio::task::spawn_blocking(move || {
-        for cookie in window
-            .cookies_for_url(url.clone())
-            .map_err(|error| error.to_string())?
-        {
-            if is_sidecar_auth_cookie(&cookie) {
-                window
-                    .delete_cookie(cookie)
-                    .map_err(|error| error.to_string())?;
-            }
+        let stale = sidecar_auth_cookies(
+            window
+                .cookies_for_url(url.clone())
+                .map_err(|error| error.to_string())?,
+        );
+        for cookie in stale {
+            window
+                .delete_cookie(cookie)
+                .map_err(|error| error.to_string())?;
         }
         if window
             .app_handle()
@@ -1204,16 +1215,20 @@ mod tests {
     fn startup_cleanup_only_matches_loopback_harness_login_cookies() {
         let name = format!("dsh-auth-{}", "a".repeat(43));
         for domain in ["127.0.0.1", "localhost", ".localhost"] {
-            assert!(is_sidecar_auth_cookie(
-                &Cookie::build((name.clone(), "secret"))
-                    .domain(domain)
-                    .build()
-            ));
+            for cookie_name in [name.as_str(), "dsh-auth"] {
+                assert!(is_sidecar_auth_cookie(
+                    &Cookie::build((cookie_name, "secret"))
+                        .domain(domain)
+                        .build()
+                ));
+            }
         }
         for (name, domain) in [
             (name.as_str(), "example.com"),
+            ("dsh-auth", "example.com"),
             ("preference", "127.0.0.1"),
             ("dsh-auth-unrelated", "127.0.0.1"),
+            ("dsh-auth-", "127.0.0.1"),
             (
                 "dsh-auth-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!",
                 "127.0.0.1",
@@ -1223,6 +1238,30 @@ mod tests {
                 &Cookie::build((name, "value")).domain(domain).build()
             ));
         }
+    }
+
+    #[test]
+    fn sidecar_auth_sweep_deletes_bare_and_legacy_loopback_logins_only() {
+        let legacy = format!("dsh-auth-{}", "b".repeat(43));
+        let deleted: Vec<String> = sidecar_auth_cookies(vec![
+            Cookie::build(("dsh-auth", "bare")).domain("127.0.0.1").build(),
+            Cookie::build((legacy.clone(), "legacy"))
+                .domain("localhost")
+                .build(),
+            Cookie::build(("dsh-auth", "minted-elsewhere"))
+                .domain("example.com")
+                .build(),
+            Cookie::build(("preference", "compact"))
+                .domain("127.0.0.1")
+                .build(),
+            Cookie::build(("dsh-session", "signed-value"))
+                .domain("127.0.0.1")
+                .build(),
+        ])
+        .iter()
+        .map(|cookie| cookie.name().to_string())
+        .collect();
+        assert_eq!(deleted, vec!["dsh-auth".to_string(), legacy]);
     }
 
     #[test]

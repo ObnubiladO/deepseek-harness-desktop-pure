@@ -1,6 +1,8 @@
 import { Console } from 'node:console'
+import { existsSync, lstatSync, mkdirSync, rmSync, symlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import {
   FrameDecoder, systemBridge, writeMessage, type ProtocolWriter,
 } from './protocol.ts'
@@ -27,7 +29,6 @@ const PROTOCOL_VERSION = 1
 const BOOT_TIMEOUT_MS = 90_000
 const runtimeRoot = dirname(dirname(fileURLToPath(import.meta.url)))
 const overlayPath = join(runtimeRoot, 'overlay.yml')
-const runtimeManifest = join(runtimeRoot, 'package.json')
 
 const protocolWrite = process.stdout.write.bind(process.stdout)
 const write: ProtocolWriter = (frame) => {
@@ -94,17 +95,49 @@ async function handleRequest(
   throw new Error(`unknown Desktop request ${JSON.stringify(method)}`)
 }
 
+/** The Desktop-owned plugin packages the profile must be able to import. */
+function desktopPackages(): { name: string; dir: string }[] {
+  return [
+    { name: '@deepseek-ai/dsh-desktop-runtime', dir: runtimeRoot },
+    {
+      name: '@deepseek-ai/dsh-desktop-client-ui',
+      dir: join(runtimeRoot, 'node_modules', '@deepseek-ai', 'dsh-desktop-client-ui'),
+    },
+  ].filter(entry => existsSync(join(entry.dir, 'package.json')))
+}
+
+/**
+ * Give the Desktop-owned plugin packages a place in the profile resolution layer.
+ * The profile boot computes plugin resolution from the upstream `dsh` installation
+ * anchor and projects its entries into `<home>/profiles/node_modules`; packages only
+ * this deploy root carries are not part of that installation, so their names must
+ * occupy that layer before the profile boots or every overlay row fails to import.
+ * A package manager install of the same name stays authoritative.
+ * @param home - resolved Harness home owning the shared profile directory.
+ */
+function linkDesktopPackages(home: string): void {
+  const layer = join(home, 'profiles', 'node_modules')
+  for (const { name, dir } of desktopPackages()) {
+    const link = join(layer, ...name.split('/'))
+    let existing = true
+    try {
+      if (!lstatSync(link).isSymbolicLink()) continue
+    } catch {
+      existing = false
+    }
+    mkdirSync(dirname(link), { recursive: true })
+    if (existing) rmSync(link, { force: true })
+    symlinkSync(dir, link, process.platform === 'win32' ? 'junction' : 'dir')
+  }
+}
+
 async function serve(): Promise<void> {
   const appBoot = await import('@deepseek-ai/dsh-app-boot')
-  // The profile boot heals the CLI installation closure. Desktop also owns
-  // loader-visible packages from this deploy root, so seed that closure first.
-  await appBoot.healProfilesModuleFallback({ installAnchor: runtimeManifest })
+  linkDesktopPackages(resolveDshHome())
   const profileBoot = await import(new URL('./profile-boot.mjs', import.meta.url).href) as unknown as {
     runProfile(options: {
       environment: ReturnType<typeof appBoot.loadLayeredEnv>
       profile: string
-      /** Disk-link module resolution: the Desktop deploy root owns loader-visible packages. */
-      resolutionMode: 'link'
       patchFiles: readonly string[]
       args: readonly string[]
     }): Promise<RunningProfile>
@@ -112,13 +145,6 @@ async function serve(): Promise<void> {
   const running = await profileBoot.runProfile({
     environment: appBoot.loadLayeredEnv('dsh'),
     profile: 'web',
-    // Desktop is a plain-Node caller whose deploy root carries its own
-    // loader-visible packages (the overlay's runtime and client bundles). The
-    // default runtime generation is computed from the upstream `dsh` anchor and
-    // therefore cannot see them; disk links resolve through the profile
-    // fallback this sidecar seeded above, which is also what the packaged
-    // Desktop has always used.
-    resolutionMode: 'link',
     patchFiles: [overlayPath],
     args: ['--host', '127.0.0.1', '--port', '0', '--no-open'],
   })

@@ -1,5 +1,7 @@
 # Pinned plugin patches
 
+English | [中文](README.zh.md)
+
 Patches for third-party DSH plugins that a DeepDive profile installs. They are
 not part of this repository's own `patches/` set (those are wired to the repo's
 `patchedDependencies`); each one is applied by the *profile's* pnpm install.
@@ -8,7 +10,7 @@ not part of this repository's own `patches/` set (those are wired to the repo's
 
 Pins `dsh-codex-provider` 0.1.0 on DSH 0.1.6-alpha.2 and newer.
 
-Upstream e459e32637 ("perf(typert): materialize generated schemas on first use")
+Upstream `dsh-v0.1.6-alpha.2` ("perf(typert): materialize generated schemas on first use")
 made the strict codec lazy: `TypertCodec` now carries `create(): TypertSchema`
 instead of the eager `schema` member that 0.1.6-alpha.1 accepted. The client
 registry rejects a codec without a `create` factory, so the plugin's

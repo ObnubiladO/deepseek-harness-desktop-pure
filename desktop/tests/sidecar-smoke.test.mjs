@@ -100,7 +100,8 @@ async function runSidecarSmoke(launchMode) {
 
     const exchange = await fetch(launchUrl, { redirect: 'manual' })
     assert.equal(exchange.status, 303)
-    assert.equal(exchange.headers.get('location'), '/')
+    // Client routes are document-relative since the upstream web-route change.
+    assert.equal(exchange.headers.get('location'), './')
     const setCookie = exchange.headers.get('set-cookie')
     assert.notEqual(setCookie, null, 'launch token exchange must set a browser cookie')
     const cookie = setCookie.split(';', 1)[0]
@@ -161,10 +162,11 @@ async function runSidecarSmoke(launchMode) {
     const clientUi = manifest.entries.find(entry => (
       entry.id === '@deepseek-ai/dsh-desktop-client-ui'))
     assert.ok(clientUi !== undefined, 'desktop overlay must mount the desktop client UI entry')
-    const bundle = await fetch(`${origin}${nativePicker.url}`)
+    // Manifest bundle URLs are document-relative since the upstream web-route change.
+    const bundle = await fetch(new URL(nativePicker.url, origin))
     assert.equal(bundle.status, 200)
     assert.match(bundle.headers.get('content-type') ?? '', /text\/javascript/)
-    const clientUiBundle = await fetch(`${origin}${clientUi.url}`)
+    const clientUiBundle = await fetch(new URL(clientUi.url, origin))
     assert.equal(clientUiBundle.status, 200)
     const clientUiSource = await clientUiBundle.text()
     assert.match(clientUiSource, /desktop_save_session|settings\.section/)
