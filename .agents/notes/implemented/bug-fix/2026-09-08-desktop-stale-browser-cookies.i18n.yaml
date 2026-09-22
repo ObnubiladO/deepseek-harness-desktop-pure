@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-08-desktop-stale-browser-cookies.md
+2026-09-08-desktop-stale-browser-cookies.md: 900b9b61a00ac65c118ac7e4b6b7b9b4f5abfbbb
+2026-09-08-desktop-stale-browser-cookies.zh.md: 7746362ef8271ee1040e7339190e2a1dacaa85c4

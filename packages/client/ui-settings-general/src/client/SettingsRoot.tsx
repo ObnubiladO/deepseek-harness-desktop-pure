@@ -2,8 +2,9 @@
  * Settings shell root: the sidebar-foot trigger row plus the centered modal
  * panel (figma 2552:26025, 760x500) with the section nav rail. The shell is
  * a pure composition face — slot-owned text (trigger label, panel title,
- * close label, sections) arrives from registrants through slots; accessible
- * names resolve from localized content (trigger: shell locale; dialog:
+ * close label, sections) and the optional Desktop update seat arrive from
+ * registrants through slots; accessible names resolve from localized content
+ * (trigger: shell locale; dialog:
  * aria-labelledby the title node; close: visually-hidden slot text). Modal
  * open state and the active section id are component-local viewing state;
  * the onboarding coordinator mounts exactly one ordered registrant while the
@@ -141,7 +142,7 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   }, [])
 
   // The ledger tick keeps the nav rows fresh: registrants re-register with
-  // freshly localized text on locale change, and the trigger/header/close
+  // freshly localized text on locale change, and the trigger/update/header/close
   // seats re-render through their own outlets' subscriptions.
   const rows = useSections(s => s)
   const desktopUpdate = useDesktopUpdate(state => state)
@@ -221,17 +222,20 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   return (
     <>
       <div ref={triggerRow} className={clsx(css.triggerRow, !wide && css.railRow)}>
-        {renderSlot('settings.launcher', { wide, openSettings: () => { setOpen(true) }, openOnboarding: (id) => { setOpen(false); setRequestedOnboarding(id) } }, { fallback: <button
-          ref={triggerButton}
-          type="button"
-          className={clsx(css.trigger, !wide && css.rail)}
-          aria-label={t('trigger')}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          onClick={() => { setOpen(true) }}
-        >
-          {renderSlot('settings.trigger', { wide })}
-        </button> })}
+        <div className={css.triggerColumn}>
+          {renderSlot('settings.launcher', { wide, openSettings: () => { setOpen(true) }, openOnboarding: (id) => { setOpen(false); setRequestedOnboarding(id) } }, { fallback: <button
+            ref={triggerButton}
+            type="button"
+            className={clsx(css.trigger, !wide && css.rail)}
+            aria-label={t('trigger')}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            onClick={() => { setOpen(true) }}
+          >
+            {renderSlot('settings.trigger', { wide })}
+          </button> })}
+          {renderSlot('settings.update', { wide })}
+        </div>
         <ConnectionIndicator
           state={wide && desktopUpdate.presentation?.phase !== 'installing' ? connectionIndicator : undefined}
           disconnectedLabel={t('connection.error')}
