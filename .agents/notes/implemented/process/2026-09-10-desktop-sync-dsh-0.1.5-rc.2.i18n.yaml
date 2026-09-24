@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-desktop-sync-dsh-0.1.5-rc.2.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-10-desktop-sync-dsh-0.1.5-rc.2.md
-2026-09-10-desktop-sync-dsh-0.1.5-rc.2.md: 58f5193ccb06f001822c865b29321354d703d94d
-2026-09-10-desktop-sync-dsh-0.1.5-rc.2.zh.md: 1f4995300ffd7bc43c279659d94a332fc6bb1a56
+/agent-note-desktop-synchronization-with-dsh-v0-1-5-rc-2:
+  en: bc78128a1da57f6e
+  zh: af614f6f483cf909
+/agent-note-desktop-synchronization-with-dsh-v0-1-5-rc-2/problem:
+  en: c12772d364e3e582
+  zh: 82168909ed100758
+/agent-note-desktop-synchronization-with-dsh-v0-1-5-rc-2/decision:
+  en: ea2f93c199737c11
+  zh: 4944989e50f10ea4
+/agent-note-desktop-synchronization-with-dsh-v0-1-5-rc-2/alternatives-considered:
+  en: 46cefe271edc5527
+  zh: f0ac5ebc3ea5fc94
+/agent-note-desktop-synchronization-with-dsh-v0-1-5-rc-2/consequences:
+  en: 72b01bec24212a69
+  zh: 59c190c2051900fb

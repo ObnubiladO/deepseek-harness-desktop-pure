@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-desktop-header-full-session-title.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-10-desktop-header-full-session-title.md
-2026-09-10-desktop-header-full-session-title.md: 52cb5923e20693c5bf380922a74c938616f4193f
-2026-09-10-desktop-header-full-session-title.zh.md: 8a3349cb9073131b3f3d467ecef34f4c522b00b2
+/agent-note-full-session-title-in-the-desktop-conversation-header:
+  en: 290dc110e22ad22b
+  zh: 55369e89cb0d1769
+/agent-note-full-session-title-in-the-desktop-conversation-header/problem:
+  en: d0d2e53d841ff817
+  zh: 2ea270f5455c8003
+/agent-note-full-session-title-in-the-desktop-conversation-header/decision:
+  en: 8ccb6a1f107e4fdd
+  zh: 602b5333439c8fa8
+/agent-note-full-session-title-in-the-desktop-conversation-header/alternatives-considered:
+  en: db0d09e8b61af266
+  zh: 8d7e80e605d88490
+/agent-note-full-session-title-in-the-desktop-conversation-header/consequences:
+  en: 6aeb00a83b4509e6
+  zh: 00cc8d528606d3b4
+/agent-note-full-session-title-in-the-desktop-conversation-header/testing:
+  en: e366c5eb7c3e3e11
+  zh: f412f2fb474db2a2

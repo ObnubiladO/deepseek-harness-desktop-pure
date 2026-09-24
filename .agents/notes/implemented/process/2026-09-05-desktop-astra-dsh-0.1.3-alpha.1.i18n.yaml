@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.md
-2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.md: 7647f7b3f999739048eba29215dca90d859ec3d4
-2026-09-05-desktop-astra-dsh-0.1.3-alpha.1.zh.md: 71cc09d113490140aee22bfc580dd0e235851c6b
+/agent-note-desktop-astra-build-on-dsh-v0-1-3-alpha-1:
+  en: fe8f0c6f6e52afbf
+  zh: c151d8af5e90ffae
+/agent-note-desktop-astra-build-on-dsh-v0-1-3-alpha-1/problem:
+  en: 9acab5f3d3f32ccd
+  zh: aa9d419c99784cb4
+/agent-note-desktop-astra-build-on-dsh-v0-1-3-alpha-1/decision:
+  en: 3efb728027f1aa62
+  zh: b5c78534c798d31a
+/agent-note-desktop-astra-build-on-dsh-v0-1-3-alpha-1/alternatives-considered:
+  en: 79d1e161ba76d469
+  zh: 755bfd9ccd0d9ea3
+/agent-note-desktop-astra-build-on-dsh-v0-1-3-alpha-1/consequences:
+  en: ef6e4dd88ee1c569
+  zh: a7e2d8467992e128

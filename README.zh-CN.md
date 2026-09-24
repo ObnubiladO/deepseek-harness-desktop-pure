@@ -8,11 +8,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.19/deepdive-windows-x64-0.1.19.exe"><strong>下载 Windows 版</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.20/deepdive-windows-x64-0.1.20.exe"><strong>下载 Windows 版</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.19/deepdive-macos-arm64-0.1.19.dmg"><strong>下载 macOS 版</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.1.20/deepdive-macos-arm64-0.1.20.dmg"><strong>下载 macOS 版</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.19">发行说明</a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.20">发行说明</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/issues">反馈 Desktop 问题</a>
   &nbsp;·&nbsp;
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.19"><img src="https://img.shields.io/badge/release-v0.1.19-orange" alt="v0.1.19 prerelease"></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.20"><img src="https://img.shields.io/badge/release-v0.1.20-orange" alt="v0.1.20 prerelease"></a>
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml"><img src="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml/badge.svg" alt="Desktop build"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20Apple%20Silicon%20%7C%20Windows%20x64-0f766e" alt="Supported platforms">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/cipherTing/deepseek-harness-desktop-pure" alt="MIT License"></a>
@@ -44,7 +44,7 @@ DeepDive 将 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 
 ## 下载与安装
 
-下载 [DeepDive v0.1.19](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.19) 的 Windows x64 或 macOS（Apple 芯片）安装包，安装完成后启动。此 Astra 预发行版同时提供两个平台的构建。
+下载 [DeepDive v0.1.20](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.1.20) 的 Windows x64 或 macOS（Apple 芯片）安装包，安装完成后启动。此 Astra 预发行版同时提供两个平台的构建。
 
 | 平台 | 安装包 | 支持范围 |
 | --- | --- | --- |
