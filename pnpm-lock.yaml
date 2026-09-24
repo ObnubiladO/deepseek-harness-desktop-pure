@@ -1047,6 +1047,9 @@ importers:
       '@deepseek-ai/dsh-launch-environment':
         specifier: workspace:^
         version: link:../../packages/util/launch-environment
+      '@deepseek-ai/dsh-llm-deepseek':
+        specifier: workspace:^
+        version: link:../../packages/llm/llm-deepseek
       '@deepseek-ai/dsh-output-retention':
         specifier: workspace:^
         version: link:../../packages/util/output-retention
