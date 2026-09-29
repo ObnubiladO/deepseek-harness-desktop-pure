@@ -250,6 +250,36 @@ describe('BrowserAuth', () => {
     expect(store).toMatchObject({ reads: 0, modifies: 2 })
   })
 
+  it('mints one shared cookie name so a later authority replaces the earlier login', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const first = exchange(auth, '127.0.0.1:3080')
+    const second = exchange(auth, '127.0.0.1:3081')
+
+    expect([first.state.headers?.['set-cookie'], second.state.headers?.['set-cookie']]
+      .map(setCookie => setCookie?.split('=', 1)[0]))
+      .toEqual(['dsh-auth', 'dsh-auth'])
+
+    // A browser cookie store keys by name/domain/path, so one shared name makes the
+    // second launch replace the first instead of accumulating one durable cookie per
+    // random port.
+    const jar = new Map<string, string>()
+    for (const setCookie of [first.state.headers?.['set-cookie'], second.state.headers?.['set-cookie']]) {
+      if (setCookie === undefined) throw new Error('exchange did not set a cookie')
+      const [name, ...value] = setCookie.split(';', 1)[0]!.split('=')
+      jar.set(name!, value.join('='))
+    }
+    expect([...jar.keys()]).toEqual(['dsh-auth'])
+    expect(jar.get('dsh-auth')).toBe(second.cookie.split('=', 2)[1])
+
+    // The shared name is not the isolation primitive: each cookie stays bound to the
+    // authority that minted it, so the other port refuses it.
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: first.cookie }))).toBe(true)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:3081', { cookie: first.cookie }))).toBe(false)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:3081', { cookie: second.cookie }))).toBe(true)
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: second.cookie }))).toBe(false)
+  })
+
   it('fails loud on an invalid owner record instead of replacing it', async () => {
     const unsupported = new RecordCredentials()
     unsupported.record = { kind: 'api-key', key: 'not-a-cookie-secret' }

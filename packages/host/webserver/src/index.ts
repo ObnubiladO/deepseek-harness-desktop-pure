@@ -239,8 +239,9 @@ export class WebServer extends Service {
     // Last-resort guard: handle() rejecting would otherwise be an unhandled
     // rejection killing the process on one malformed request (bad %-escape,
     // client dropping mid-body). Per-request failures log and answer 400 —
-    // never a process exit.
-    this.server = createServer((req, res) => {
+    // never a process exit. The header cap is raised above Node's 16 KiB
+    // default so a bloated request header cannot 431 every request in the app.
+    this.server = createServer({ maxHeaderSize: 64 * 1024 }, (req, res) => {
       const next = (): void => {
         void handle(req, res).catch((err: unknown) => {
           this.ctx.logger.warn(err instanceof Error ? err : new Error(String(err)))

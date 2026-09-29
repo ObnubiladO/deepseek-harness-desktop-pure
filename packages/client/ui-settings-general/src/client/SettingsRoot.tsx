@@ -2,8 +2,9 @@
  * Settings shell root: the sidebar-foot trigger row plus the centered modal
  * panel (figma 2552:26025, 760x500) with the section nav rail. The shell is
  * a pure composition face — slot-owned text (trigger label, panel title,
- * close label, sections) arrives from registrants through slots; accessible
- * names resolve from localized content (trigger: shell locale; dialog:
+ * close label, sections) and the optional Desktop update seat arrive from
+ * registrants through slots; accessible names resolve from localized content
+ * (trigger: shell locale; dialog:
  * aria-labelledby the title node; close: visually-hidden slot text). Modal
  * open state and the active section id belong to the declared owner store;
  * the onboarding coordinator mounts exactly one ordered registrant while the
@@ -124,7 +125,7 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   const connectingShownAt = useRef<number | undefined>(undefined)
 
   // The ledger tick keeps the nav rows fresh: registrants re-register with
-  // freshly localized text on locale change, and the trigger/header/close
+  // freshly localized text on locale change, and the trigger/update/header/close
   // seats re-render through their own outlets' subscriptions.
   const rows = useSections(s => s)
   const desktopUpdate = useDesktopUpdate(state => state)
@@ -214,23 +215,26 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   return (
     <>
       <div className={clsx(css.triggerRow, !wide && css.railRow)}>
-        {renderSlot('settings.launcher', {
-          wide, settingsOpen: open, openSettings: actions.open,
-          ...(shortcut?.keys.length ? { settingsShortcut: { keys: shortcut.keys, aria: shortcut.aria } } : {}),
-          openOnboarding: (id) => { close(); setRequestedOnboarding(id) },
-        }, { fallback: <Tooltip disabled={open} label={t('trigger')} shortcutKeys={shortcut?.keys}>
-          <button
-            type="button"
-            className={clsx(css.trigger, !wide && css.rail)}
-            aria-label={t('trigger')}
-            aria-keyshortcuts={shortcut?.aria}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            onClick={() => { actions.open() }}
-          >
-            {renderSlot('settings.trigger', { wide })}
-          </button>
-        </Tooltip> })}
+        <div className={css.triggerColumn}>
+          {renderSlot('settings.launcher', {
+            wide, settingsOpen: open, openSettings: actions.open,
+            ...(shortcut?.keys.length ? { settingsShortcut: { keys: shortcut.keys, aria: shortcut.aria } } : {}),
+            openOnboarding: (id) => { close(); setRequestedOnboarding(id) },
+          }, { fallback: <Tooltip disabled={open} label={t('trigger')} shortcutKeys={shortcut?.keys}>
+            <button
+              type="button"
+              className={clsx(css.trigger, !wide && css.rail)}
+              aria-label={t('trigger')}
+              aria-keyshortcuts={shortcut?.aria}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              onClick={() => { actions.open() }}
+            >
+              {renderSlot('settings.trigger', { wide })}
+            </button>
+          </Tooltip> })}
+          {renderSlot('settings.update', { wide })}
+        </div>
         <ConnectionIndicator
           state={wide && desktopUpdate.presentation?.phase !== 'installing' ? connectionIndicator : undefined}
           disconnectedLabel={t('connection.error')}
