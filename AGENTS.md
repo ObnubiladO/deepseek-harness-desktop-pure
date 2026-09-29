@@ -24,7 +24,7 @@ Before declaring synchronization complete, fetch the exact upstream ref, confirm
 
 Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never raw `--force`.
 
-Every synchronization note and adaptation document names the exact upstream tag or commit it covers (for this cycle: `dsh-v0.2.0-rc.1`, version `0.2.0-rc.1`). This traceability does not change the independent Desktop version.
+Synchronization notes and adaptation documents name the upstream tag or commit they cover (for this cycle: `dsh-v0.2.0-rc.2`, version `0.2.0-rc.2`). This does not change the independent Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
@@ -77,6 +77,8 @@ DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.
 Public APIs are pre-stable; update every consumer. Follow [version/status](docs/session-format-status.md) and [type acknowledgements](docs/cookbook/reviewing-persistence-type-changes.md). [Adjacent migration](.agents/notes/implemented/architecture/2026-08-31-released-session-format-migrations.md) may add a version-named successor but never move, overwrite, or delete committed generations; predecessors imply neither fallback nor downgrade support. SQLite uses monotonic `SCHEMA_VERSION`.
 
 Acknowledge [declared persistence-type changes](docs/cookbook/reviewing-persistence-type-changes.md).
+
+Record each externally perceptible breaking change immediately in an [upgrade guide](.agents/skills/dsh-create-upgrade-guide/SKILL.md).
 
 **Application launch.** Only `dsh` profiles launch supported Node apps; package bins, demos, and public SDK argv escapes are forbidden ([rule](docs/architecture.md#application-launch)).
 

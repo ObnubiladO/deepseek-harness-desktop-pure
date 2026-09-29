@@ -8,11 +8,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.2.0/deepdive-windows-x64-0.2.0.exe"><strong>Download for Windows</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.2.1/deepdive-windows-x64-0.2.1.exe"><strong>Download for Windows</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.2.0/deepdive-macos-arm64-0.2.0.dmg"><strong>Download for macOS</strong></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/download/v0.2.1/deepdive-macos-arm64-0.2.1.dmg"><strong>Download for macOS</strong></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.0">Release notes</a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.1">Release notes</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/issues">Report a Desktop issue</a>
   &nbsp;·&nbsp;
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-orange" alt="v0.2.0 prerelease"></a>
+  <a href="https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.1"><img src="https://img.shields.io/badge/release-v0.2.1-orange" alt="v0.2.1 prerelease"></a>
   <a href="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml"><img src="https://github.com/cipherTing/deepseek-harness-desktop-pure/actions/workflows/build-desktop.yml/badge.svg" alt="Desktop build"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20Apple%20Silicon%20%7C%20Windows%20x64-0f766e" alt="Supported platforms">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/cipherTing/deepseek-harness-desktop-pure" alt="MIT License"></a>
@@ -44,7 +44,7 @@ DeepDive packages the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek
 
 ## Download and install
 
-Download [DeepDive v0.2.0](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.0) for Windows x64 or macOS (Apple Silicon), then launch the installer. This Astra prerelease carries both platform builds.
+Download [DeepDive v0.2.1](https://github.com/ObnubiladO/deepseek-harness-desktop-pure/releases/tag/v0.2.1) for Windows x64 or macOS (Apple Silicon), then launch the installer. This Astra prerelease carries both platform builds.
 
 | Platform | Package | Support |
 | --- | --- | --- |
@@ -128,6 +128,12 @@ Start with the [development guide](docs/development.md) and [architecture docume
 `pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
 
 For agents, follow [AGENTS.md](AGENTS.md).
+
+## Community and support
+
+- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
+- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
+- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
 
 ## Citation
 
