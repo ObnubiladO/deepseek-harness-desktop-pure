@@ -91,3 +91,12 @@ The right-hand count is the fork's commits above upstream and the left-hand coun
 ## Finish safely
 
 Update `desktop/UPSTREAM_COMMIT` only after the target and integrated tree are verified. If the target is a tag, mirror that exact tag target only after explicit authorization. Stop without pushing if the remote branch moved, the candidate tree differs from the manual integration tree, a relevant check fails, or any fork delta remains unexplained.
+
+## Build the release installers
+
+Bump the Desktop version **before** preparing the bundle, never after. `bundle:prepare` stamps the deployed runtime's own `package.json`, and both the About panel and the update seat read that stamp (`desktop/runtime/src/surface.ts`), so a bundle prepared first reports the previous version — and the update seat then offers the new release as an update forever. The order is `version:set <version>` → `bundle:prepare` → gates → installers, and the version decision (patch increment versus prerelease suffix) matters too: a prerelease suffix ranks below its release in semver precedence, so it is never offered to anyone already on the release.
+
+Verify the finished installer rather than the binary it was built from: extract `rt/package.json` and `rt/node_modules/@deepseek-ai/dsh-app-boot/package.json` from the artifact, confirm the first equals the bumped version, then run `desktop/scripts/verify-sidecar-sweep.mjs` against the release binary. A local build and a CI build of the same commit can legitimately disagree here — CI checks out the already-bumped tree, while a local bundle may predate the bump.
+
+The multi-window installer stays local and separate: build it on its `wip/multi-window-<version>-local` branch rebased onto the new base, verify both cookie markers in its embedded binary, and never publish it.
+
