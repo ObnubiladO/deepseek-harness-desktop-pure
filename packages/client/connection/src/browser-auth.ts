@@ -13,15 +13,6 @@ const AUTH_RECORD_KEY = credentialKey('client-connection', 'browser-session')
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000
 const SECRET_BYTES = 32
 const TOKEN_QUERY = 'token'
-/**
- * One fixed cookie name for every loopback authority. Cookies are not
- * port-scoped, so a name derived from `host:port` created a separate durable
- * cookie on every random-port launch, none of which ever replaced another —
- * unbounded growth that eventually pushed the request header block past the
- * Node server's size cap (431) for every request. The authority stays bound
- * inside the signed payload and is still verified per request, so naming
- * cannot be the isolation primitive.
- */
 const COOKIE_NAME = 'dsh-auth'
 const COOKIE_PAYLOAD_VERSION = 1
 const STORED_SECRET_VERSION = 1
@@ -75,12 +66,13 @@ function header(
   return typeof value === 'string' ? value : undefined
 }
 
-/** Canonical request authority used as the signed audience. */
-function requestAuthority(headers: ConnectionTrustRequest['headers']): string | undefined {
+/** Protocol-scoped cookie audience; HTTP retains its existing authority-only spelling. */
+function requestAudience(headers: ConnectionTrustRequest['headers'], secure: boolean): string | undefined {
   const host = header(headers, 'host')
   if (host === undefined) return undefined
   try {
-    return new URL(`http://${host}`).host
+    const url = new URL(`${secure ? 'https:' : 'http:'}//${host}`)
+    return secure ? url.origin : url.host
   } catch {
     return undefined
   }
@@ -123,8 +115,15 @@ function cookieValue(headerValue: string, name: string): string | undefined {
 }
 
 /** Serialize the fixed browser-session attributes; generated names and values are cookie-safe base64url. */
-function sessionCookie(name: string, value: string, expiresAt: number, maxAgeSeconds: number): string {
-  return `${name}=${value}; Max-Age=${String(maxAgeSeconds)}; Path=/; Expires=${new Date(expiresAt).toUTCString()}; HttpOnly; SameSite=Strict`
+function sessionCookie(
+  name: string,
+  value: string,
+  expiresAt: number,
+  maxAgeSeconds: number,
+  secure: boolean,
+): string {
+  const attributes = `${name}=${value}; Max-Age=${String(maxAgeSeconds)}; Path=/; Expires=${new Date(expiresAt).toUTCString()}; HttpOnly; SameSite=Strict`
+  return secure ? `${attributes}; Secure` : attributes
 }
 
 function signature(secret: Buffer, body: string): Buffer {
@@ -238,14 +237,18 @@ export class BrowserAuth {
    * 401 response.
    * @param req - incoming root or configured-index request.
    * @param res - response owned when this method returns false.
+   * @param secure - whether the listener receiving this request serves TLS; the
+   * minted cookie carries `Secure` when it does. Only that listener's own
+   * protocol decides, never a `publicUrl` announcement or a forwarded header:
+   * those describe a hop this process does not terminate.
    * @returns true only when the caller may serve index.html.
    */
-  authorizeIndex(req: ConnectionIndexRequest, res: ConnectionIndexResponse): boolean {
+  authorizeIndex(req: ConnectionIndexRequest, res: ConnectionIndexResponse, secure = false): boolean {
     /* v8 ignore next -- node:http always supplies url on server requests. */
     const url = new URL(req.url ?? '/', 'http://dsh.invalid')
     const tokens = url.searchParams.getAll(TOKEN_QUERY)
     if (tokens.length > 0) {
-      const authority = requestAuthority(req.headers)
+      const authority = requestAudience(req.headers, secure)
       if (req.method === 'GET' && url.pathname === '/' && tokens.length === 1
         && authority !== undefined && tokenMatches(tokens.join(''), this.launchToken)) {
         const issuedAt = Date.now()
@@ -261,13 +264,13 @@ export class BrowserAuth {
           'location': './',
           'referrer-policy': 'no-referrer',
           'set-cookie': sessionCookie(
-            COOKIE_NAME, value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
+            COOKIE_NAME, value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000), secure,
           ),
         })
         res.end()
         return false
       }
-      if (req.method === 'GET' && url.pathname === '/' && this.isAuthenticated(req)) {
+      if (req.method === 'GET' && url.pathname === '/' && this.isAuthenticated(req, secure)) {
         res.writeHead(303, {
           'cache-control': 'no-store',
           'location': './',
@@ -279,7 +282,7 @@ export class BrowserAuth {
       this.writeUnauthorized(req, res)
       return false
     }
-    if (this.isAuthenticated(req)) return true
+    if (this.isAuthenticated(req, secure)) return true
     this.writeUnauthorized(req, res)
     return false
   }
@@ -287,10 +290,11 @@ export class BrowserAuth {
   /**
    * Verify the authority-bound browser cookie on a Host request.
    * @param request - request headers carrying Host and Cookie.
+   * @param secure - whether the receiving listener uses TLS, including its default port.
    * @returns true only for an unexpired cookie signed by this activation's loaded secret.
    */
-  isAuthenticated(request: ConnectionTrustRequest): boolean {
-    const authority = requestAuthority(request.headers)
+  isAuthenticated(request: ConnectionTrustRequest, secure = false): boolean {
+    const authority = requestAudience(request.headers, secure)
     const rawCookie = header(request.headers, 'cookie')
     if (authority === undefined || rawCookie === undefined) return false
     const value = cookieValue(rawCookie, COOKIE_NAME)
