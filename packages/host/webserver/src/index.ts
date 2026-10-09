@@ -427,7 +427,7 @@ export class WebServer extends Service {
     // Disposal waits for in-flight acquisition and closes any listener it produces.
     await this.ctx.effect(async () => {
       if (tls === undefined) {
-        this.server = createServer(listener)
+        this.server = createServer({ maxHeaderSize: 64 * 1024 }, listener)
       } else {
         const certFile = resolve(tls.certFile)
         const keyFile = resolve(tls.keyFile)

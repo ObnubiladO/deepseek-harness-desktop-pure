@@ -1,6 +1,6 @@
 /** Browser-session authentication for the Host Connection carrier. */
 
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { credentialKey } from '@deepseek-ai/dsh-credentials'
 import type { CredentialProvider, CredentialRecord } from '@deepseek-ai/dsh-credentials'
 import type {
@@ -13,7 +13,7 @@ const AUTH_RECORD_KEY = credentialKey('client-connection', 'browser-session')
 const DAY_MILLISECONDS = 24 * 60 * 60 * 1000
 const SECRET_BYTES = 32
 const TOKEN_QUERY = 'token'
-const COOKIE_PREFIX = 'dsh-auth-'
+const COOKIE_NAME = 'dsh-auth'
 const COOKIE_PAYLOAD_VERSION = 1
 const STORED_SECRET_VERSION = 1
 const BASE64URL_PATTERN = /^[A-Za-z0-9_-]*$/
@@ -102,10 +102,6 @@ function tokenMatches(actual: string, expected: string): boolean {
   const actualBytes = Buffer.from(actual, 'utf8')
   const expectedBytes = Buffer.from(expected, 'utf8')
   return actualBytes.byteLength === expectedBytes.byteLength && timingSafeEqual(actualBytes, expectedBytes)
-}
-
-function cookieName(authority: string): string {
-  return COOKIE_PREFIX + encodeBase64Url(createHash('sha256').update(authority).digest())
 }
 
 /** Read the exact generated cookie without implementing general Cookie decoding. */
@@ -268,7 +264,7 @@ export class BrowserAuth {
           'location': './',
           'referrer-policy': 'no-referrer',
           'set-cookie': sessionCookie(
-            cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000), secure,
+            COOKIE_NAME, value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000), secure,
           ),
         })
         res.end()
@@ -301,7 +297,7 @@ export class BrowserAuth {
     const authority = requestAudience(request.headers, secure)
     const rawCookie = header(request.headers, 'cookie')
     if (authority === undefined || rawCookie === undefined) return false
-    const value = cookieValue(rawCookie, cookieName(authority))
+    const value = cookieValue(rawCookie, COOKIE_NAME)
     if (value === undefined) return false
     const payload = decodeCookie(value, this.secret)
     if (payload === undefined || payload.authority !== authority) return false
