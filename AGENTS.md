@@ -1,30 +1,30 @@
 # DeepDive
 
-This independent distribution fork packages [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) with Tauri. It is not upstream, a second Harness implementation, or a place for new Harness features.
+This independent distribution fork packages [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) with Tauri — not upstream, not a second Harness implementation, and not a place for new Harness features.
 
 A bundled Node.js sidecar starts the standard `web` profile on a random loopback port (`--host 127.0.0.1 --port 0`), and the WebView loads it directly. The upstream web host remains the source of the index, boot manifest, plugin bundles, `/api`, and event streams. Desktop adds no custom URI scheme, boot snapshot, or HTTP reimplementation; framed IPC carries only readiness, `graph-changed`, native dialogs/path opening, and shutdown.
 
 ## Fork scope
 
 - Do not add Harness features, change Harness behavior, or refactor unrelated upstream code.
-- Keep the smallest complete, extremely low-intrusion solution inside `desktop/`. A change elsewhere requires a concrete integration blocker and must be minimal; speculative abstractions, broad transport refactors, and Desktop-motivated cleanup are prohibited.
+- Keep the smallest complete, low-intrusion solution inside `desktop/`. A change elsewhere requires a concrete integration blocker and must stay minimal; speculative abstractions, broad transport refactors, and Desktop-motivated cleanup are prohibited.
 - Use official Tauri plugins and APIs for system interaction when an official capability exists. Do not replace an official plugin with an ad hoc native bridge.
 - Releases are self-contained: users install no Node.js, pnpm, runtime, or package manager. Support only macOS Apple Silicon and Windows x64 unless explicitly changed.
 - `desktop/` contains packaging source and resources, never a Harness profile, workspace, configuration home, or user-data directory.
 
 ## Upstream synchronization
 
-Synchronization is manual. Follow [`dsh-desktop-upstream-sync`](.agents/skills/dsh-desktop-upstream-sync/SKILL.md): verify the exact upstream SHA, make a real no-commit integration merge, resolve and validate the reviewed tree, materialize an upstream-rooted candidate with only the reviewed fork delta, then merge that candidate into the continuous `master` line only when authorized.
+Synchronization is manual: follow [`dsh-desktop-upstream-sync`](.agents/skills/dsh-desktop-upstream-sync/SKILL.md). Verify the exact upstream SHA, make a real no-commit integration merge, resolve and validate the reviewed tree, materialize an upstream-rooted candidate carrying only the reviewed fork delta, and merge it into `master` only when authorized.
 
-Never reset the active fork branch to the upstream target as a substitute for synchronization, replace the whole tree with upstream, reconstruct the fork from a directory allowlist, or use `-s ours` to bypass content review. After manual review, a separately named upstream-rooted candidate may be created or rebuilt. The only permitted `-s ours` exception is the one-time, tree-preserving ancestry repair for the already integrated and fully verified `dsh-v0.1.1-rc.2` state: `git merge --no-ff -s ours dsh-v0.1.1-rc.2`. This repair records ancestry only; it neither applies nor verifies upstream content ([decision](.agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md)). Never reuse `-s ours` for routine synchronization or to bypass review, conflicts, or verification.
+Never reset the active fork branch to the upstream target, replace the whole tree with upstream, reconstruct the fork from a directory allowlist, or use `-s ours` to bypass content review. `-s ours` is permitted only for the one-time ancestry repair recorded in [the ancestry decision](.agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md): it records ancestry without applying or verifying content, and is never reused to bypass review, conflicts, or verification.
 
-The upstream-rooted candidate is the validated ahead-only artifact: the verified upstream target must be its ancestor, its tree must match the reviewed manual integration tree, and it must be `0` behind that target. `master` is the continuous fork line: when landing a candidate, retain the current `master` as first parent and use the validated candidate as second parent through a normal `git merge --no-ff <candidate>`. Never reset or rebase `master` to the upstream target. Published `master` and release tags are never rewritten.
+The upstream-rooted candidate is the validated ahead-only artifact: the verified upstream target must be its ancestor, its tree must match the reviewed integration tree, and it must be `0` behind that target. `master` is the continuous fork line: retain the current `master` as first parent and the validated candidate as second parent via a normal `git merge --no-ff <candidate>`. Never reset or rebase `master`; published `master` and release tags are never rewritten.
 
-Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, and require `git merge-base --is-ancestor <verified-upstream-sha> HEAD` plus `git rev-list --count HEAD..<verified-upstream-sha>` equal to `0`. For a candidate, compare its tree with the reviewed manual integration tree. For a `master` landing, verify the landing merge commit's recorded `master` tip is the first parent, the validated candidate is the second parent, and that merge commit's tree equals the candidate; later governance or release-note commits are checked separately. Report ahead/behind with `git rev-list --left-right --count <verified-upstream-sha>...HEAD`: the left count is upstream-only (behind) and the right count is fork-only (ahead). `origin/master...HEAD` only measures local/remote delivery and is not the upstream lead.
+Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, and require `git merge-base --is-ancestor <verified-upstream-sha> HEAD` plus `git rev-list --count HEAD..<verified-upstream-sha>` equal to `0`. For a candidate, compare its tree with the reviewed integration tree. For a `master` landing, verify the landing merge commit's recorded `master` tip is the first parent, the validated candidate is the second parent, and that merge commit's tree equals the candidate; later governance or release-note commits are checked separately. Report ahead/behind with `git rev-list --left-right --count <verified-upstream-sha>...HEAD`: left is upstream-only (behind), right is fork-only (ahead). `origin/master...HEAD` measures local/remote delivery only, never the upstream lead.
 
-Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never raw `--force`.
+Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never `--force`.
 
-Synchronization notes and adaptation documents name the upstream tag or commit they cover (for this cycle: `dsh-v0.2.1-alpha.2`). This does not change the Desktop version.
+Synchronization notes and adaptation documents name the upstream tag or commit they cover (this cycle: `dsh-v0.2.1-alpha.3`); this never changes the Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
@@ -162,7 +162,9 @@ pnpm run test:snapshot:record  # re-record expected outputs (needs key)
 pnpm run typecheck
 pnpm run lint
 pnpm run duplication    # cross-file TypeScript clone detection
-pnpm run build          # tsc emits lib/types, tsdown bundles runtime
+pnpm run build          # build:artifacts + build:check, concurrently
+pnpm run build:artifacts # artifacts: tsc emits lib/types, tsdown bundles runtime, Web
+pnpm run build:check    # typecheck aggregate tests/scripts against current build:artifacts output
 pnpm run hygiene        # publint + workspace/package/dependency checks + NodeNext consumer check
 pnpm run check:windows-wine  # ONLY when diagnosing a known Windows failure (needs wine); CI owns this signal
 pnpm run doc-sync       # documentation gates (scripts/run-gates.ts)
@@ -170,7 +172,7 @@ pnpm run test:docs      # quick documentation checks (no build; doc-quick aggreg
 pnpm run website:build  # VitePress build (doubles as dead-link check)
 pnpm dsh --profile headless "task"  # run one task from source (needs DEEPSEEK_API_KEY)
 pnpm run demo:ptc -- "task"  # headless PTC mode run (needs key)
-pnpm run dev:web | dev:desktop  # build, then launch; Web also rebuilds client bundles on edits. start:web | start:desktop skip the build
+pnpm run dev:web | dev:desktop  # build:artifacts, then launch; Web also rebuilds client bundles on edits. start:web | start:desktop skip the build
 make web|dev-web|desktop|dev-desktop|build  # the same commands; ARGS='--no-open' forwards options
 ```
 
@@ -185,11 +187,12 @@ Before pushing, follow [dsh-pre-push-checks](.agents/skills/dsh-pre-push-checks/
 - Match evidence to the surface: focused behavior tests, model/user-output snapshots, `doc-sync` for docs, built smokes for published paths, and real-API e2e for providers.
 - Never default to the full suite or repeat a passing check for commit or push. CI owns exhaustive coverage and the platform matrix; rehearse all locally only by explicit request, for CI diagnosis, or for an irreducibly repository-wide change.
 - `test:coverage`, not `test`, is the CI coverage gate ([why](docs/testing.md)).
+- Develop with `build:artifacts`; before claiming completion, run `build:check` after the latest `build:artifacts`, or `build` ([layout](docs/development.md#typescript-project-layout)).
 - **Web browser automation and GIF recording:** launch with `pnpm dsh web --patch apps/web/tests/pin-browse-picker.overlay.yml` to use the [in-page directory picker](apps/web/tests/pin-browse-picker.overlay.yml); omit this override only when testing native picker behavior explicitly.
 
 ## Secrets / .env
 
-Windows packaging/signing: [required reading](apps/desktop/README.md#windows-ev-signing).
+Windows packaging/signing: [required reading](apps/desktop/windows-signing/README.md).
 
 Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and root `.env`. cordis.yml allows `!!js` (never `!js`) under plugin `config` and entry `disabled`; other metadata stays literal, so conditional composition also uses overlays ([primer](docs/cordis-primer.md#loader-configuration)). Never commit credentials. CI e2e skips without a key; [testing.md](docs/testing.md) owns key policy.
 
@@ -220,6 +223,7 @@ Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and 
 - **Prefer symmetry for parallel values**; unexplained asymmetry usually signals a missed extraction.
 - **Tests describe behavior, not correctness.** Change obsolete behavior with its tests; explain why in the PR.
 - **Create Agent Notes only for durable decision rationale;** mechanical/local edits are exempt, including local UI changes ([scope](.agents/notes/README.md#when-to-write-one)). Archived notes are frozen: never edit or treat them as current authority ([archive policy](.agents/notes/README.md#archiving-and-deletion)).
+- **Official plugin artwork:** use [dsh-official-plugin-artwork](.agents/skills/dsh-official-plugin-artwork/SKILL.md) for official and official experimental plugin icons; obtain designer approval before landing new glyphs.
 - **Client UI copy is locale-owned.** Route product text through typed dictionaries and `t` or localized primitive props; `verify-client-ui-i18n` rejects hardcoded copy ([decision](.agents/notes/implemented/architecture/2026-08-23-locale-owned-client-ui-copy.md)).
 - **Testing policy** â€” [docs/testing.md](docs/testing.md). Every non-trivial model- or product-user-visible change updates a keyless recorded-session snapshot; [snapshot ownership](snapshots/AGENTS.md) reserves the top-level tree for session-driven cases and keeps other expected output owner-local. Fixtures replay on macOS/Linux; fix fixtures, not normalizers.
 - **Design each tool's UI presentation up front.** Host presenters stay pure; Web cards derive from raw events and persisted result metadata ([cookbook](docs/cookbook/adding-a-tool.md)).
@@ -232,7 +236,7 @@ Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and 
 
 ## Defensive patterns
 
-Read [docs/defensive-patterns.md](docs/defensive-patterns.md) before lifecycle, concurrency, subprocess, or teardown work.
+Read [docs/defensive-patterns/README.md](docs/defensive-patterns/README.md) before changing a package surface, remote service, client component or state, conversation or Session behavior, or lifecycle, concurrency, subprocess, and teardown code. Its [review principles](docs/defensive-patterns/README.md#why-these-rules) apply per artifact.
 
 ## Type safety and documentation
 
