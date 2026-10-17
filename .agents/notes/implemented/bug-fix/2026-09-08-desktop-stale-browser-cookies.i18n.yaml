@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-08-desktop-stale-browser-cookies.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-08-desktop-stale-browser-cookies.md
+/agent-note-desktop-startup-removes-stale-browser-login-cookies:
+  en: 264fb44129841584
+  zh: 9b930437deddc962
+/agent-note-desktop-startup-removes-stale-browser-login-cookies/problem:
+  en: 2e30bfeef9a5817e
+  zh: 71f2c0d81479af14
+/agent-note-desktop-startup-removes-stale-browser-login-cookies/decision:
+  en: ef3116d1c7beccb2
+  zh: 56265861569d8f65
+/agent-note-desktop-startup-removes-stale-browser-login-cookies/alternatives-considered:
+  en: b92cb9f7ab9901c6
+  zh: 0e01e30d341fa180
+/agent-note-desktop-startup-removes-stale-browser-login-cookies/consequences:
+  en: 2a430fdb76d8caee
+  zh: 97d0d190719cd2ab
