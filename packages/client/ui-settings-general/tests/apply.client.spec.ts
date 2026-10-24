@@ -111,6 +111,8 @@ describe('ui-settings-general apply', () => {
     // The shared developer-tool control belongs to General; onboarding remains feature-owned.
     expect(c.ctx.slots.entries('settings.general.item').filter(row => row.locale === NS).map(row => row.options.id)).toEqual(['developer-tools', 'current-version'])
     expect(c.ctx.slots.entries('settings.onboarding').filter(row => row.locale === NS)).toEqual([])
+    // The Desktop update seat is registered by the Desktop client, never by this plugin.
+    expect(c.ctx.slots.entries('settings.update').filter(row => row.locale === NS)).toEqual([])
     const developer = developerToolsRowOf(c)
     expect(developer.hooks.developerTools).toBe(c.ctx.configForms.developerTools.enabled)
     expect(developer.hooks.developerTools.getSnapshot()).toBe(false)
