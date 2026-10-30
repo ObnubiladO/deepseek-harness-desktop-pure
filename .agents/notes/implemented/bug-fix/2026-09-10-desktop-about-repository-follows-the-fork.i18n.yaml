@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-09-10-desktop-about-repository-follows-the-fork.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-10-desktop-about-repository-follows-the-fork.md
+/agent-note-desktop-about-and-update-check-name-the-fork-repository:
+  en: 639e3d1cb1238b39
+  zh: 43f2c9b99565449b
+/agent-note-desktop-about-and-update-check-name-the-fork-repository/problem:
+  en: 32966ca934cb89fc
+  zh: abbdae78cce3c475
+/agent-note-desktop-about-and-update-check-name-the-fork-repository/decision:
+  en: 1d5026eb3c2e76a9
+  zh: d8c110d659f28e84
+/agent-note-desktop-about-and-update-check-name-the-fork-repository/alternatives-considered:
+  en: 8a9da07a8ee16dfd
+  zh: d72ee475c7532113
+/agent-note-desktop-about-and-update-check-name-the-fork-repository/consequences:
+  en: 15fcb65a596ab43f
+  zh: 3450f45a43d15f82
+/agent-note-desktop-about-and-update-check-name-the-fork-repository/testing:
+  en: e6987294b94d2341
+  zh: d4ec5cc28ef65792
