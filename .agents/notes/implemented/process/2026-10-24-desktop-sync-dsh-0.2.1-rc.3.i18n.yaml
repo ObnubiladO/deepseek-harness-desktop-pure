@@ -3,8 +3,8 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-10-24-desktop-sync-dsh-0.2.1-rc.3.md
 /agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-3:
-  en: f397ef49562b3586
-  zh: 9ae46dc439dda6a0
+  en: 55de6514230c1eac
+  zh: d851b7903b65e875
 /agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-3/problem:
   en: e0839f72774e06f9
   zh: 5b87a5090b526064

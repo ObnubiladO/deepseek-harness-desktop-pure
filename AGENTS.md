@@ -1,8 +1,8 @@
 # DeepDive
 
-This independent distribution fork packages [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) with Tauri � not upstream, not a second Harness implementation, and not a place for new Harness features.
+This independent distribution fork packages [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) with Tauri — not upstream, not a second Harness implementation, and not a place for new Harness features.
 
-A bundled Node.js sidecar starts the standard `web` profile on a random loopback port (`--host 127.0.0.1 --port 0`), and the WebView loads it directly. The upstream web host remains the source of the index, boot manifest, plugin bundles, `/api`, and event streams. Desktop adds no custom URI scheme, boot snapshot, or HTTP reimplementation; framed IPC carries only readiness, `graph-changed`, native dialogs/path opening, and shutdown.
+A bundled Node.js sidecar starts the standard `web` profile on a random loopback port (`--host 127.0.0.1 --port 0`), and the WebView loads it directly. The upstream web host sources the index, boot manifest, plugin bundles, `/api`, and event streams. Desktop adds no custom URI scheme, boot snapshot, or HTTP reimplementation; framed IPC carries only readiness, `graph-changed`, native dialogs/path opening, and shutdown.
 
 ## Fork scope
 
@@ -14,17 +14,17 @@ A bundled Node.js sidecar starts the standard `web` profile on a random loopback
 
 ## Upstream synchronization
 
-Synchronization is manual: follow [`dsh-desktop-upstream-sync`](.agents/skills/dsh-desktop-upstream-sync/SKILL.md). Verify the exact upstream SHA, make a real no-commit integration merge, resolve and validate the reviewed tree, materialize an upstream-rooted candidate carrying only the reviewed fork delta, and merge it into `master` only when authorized.
+Synchronization is manual: follow [`dsh-desktop-upstream-sync`](.agents/skills/dsh-desktop-upstream-sync/SKILL.md). Verify the exact upstream SHA, make a no-commit integration merge, resolve and validate the tree, materialize an upstream-rooted candidate carrying only the fork delta, and merge it into `master` only when authorized.
 
-Never reset the active fork branch to the upstream target, replace the whole tree with upstream, reconstruct the fork from a directory allowlist, or use `-s ours` to bypass content review. `-s ours` is permitted only for the one-time ancestry repair recorded in [the ancestry decision](.agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md): it records ancestry without applying or verifying content, and is never reused to bypass review, conflicts, or verification.
+Never reset the fork branch to the upstream target, replace the whole tree with upstream, reconstruct the fork from a directory allowlist, or use `-s ours` to bypass content review. `-s ours` is permitted only for the one-time ancestry repair recorded in [the ancestry decision](.agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md), which records ancestry without verifying content and is never reused to bypass review or verification.
 
-The upstream-rooted candidate is the validated ahead-only artifact: the verified upstream target must be its ancestor, its tree must match the reviewed integration tree, and it must be `0` behind that target. `master` is the continuous fork line: retain the current `master` as first parent and the validated candidate as second parent via a normal `git merge --no-ff <candidate>`. Never reset or rebase `master`; published `master` and release tags are never rewritten.
+The upstream-rooted candidate is the validated ahead-only artifact: the verified upstream target must be its ancestor, its tree must match the reviewed integration tree, and it must be `0` behind that target. `master` is the continuous fork line: retain the current `master` as first parent and the candidate as second parent via a normal `git merge --no-ff <candidate>`. Never reset or rebase `master`; published `master` and release tags are never rewritten.
 
-Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, and require `git merge-base --is-ancestor <verified-upstream-sha> HEAD` plus `git rev-list --count HEAD..<verified-upstream-sha>` equal to `0`. For a candidate, compare its tree with the reviewed integration tree. For a `master` landing, verify the landing merge commit's recorded `master` tip is the first parent, the validated candidate is the second parent, and that merge commit's tree equals the candidate; later governance or release-note commits are checked separately. Report ahead/behind with `git rev-list --left-right --count <verified-upstream-sha>...HEAD`: left is upstream-only (behind), right is fork-only (ahead). `origin/master...HEAD` measures local/remote delivery only, never the upstream lead.
+Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, and require `git merge-base --is-ancestor <verified-upstream-sha> HEAD` plus `git rev-list --count HEAD..<verified-upstream-sha>` equal to `0`. For a candidate, compare its tree with the reviewed integration tree. For a `master` landing, verify the merge commit's recorded `master` tip is the first parent, the validated candidate is the second parent, and its tree equals the candidate; later governance or release-note commits are checked separately. Report ahead/behind with `git rev-list --left-right --count <verified-upstream-sha>...HEAD`: left is upstream-only, right is fork-only. `origin/master...HEAD` measures local/remote delivery only, never the upstream lead.
 
-Rebase or rebuild is a topology choice, not a rule tied to branch visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the exact observed remote OID with `--force-with-lease`, never `--force`.
+Rebase or rebuild is a topology choice, not a rule tied to visibility. It requires explicit authorization whenever it rewrites a remote branch; any rewritten push uses the observed remote OID with `--force-with-lease`, never `--force`.
 
-Synchronization notes and adaptation documents name the upstream tag or commit they cover (this cycle: `dsh-v0.2.1-rc.5`); this never changes the Desktop version.
+Synchronization notes and adaptation documents name the upstream tag or commit they cover (this cycle: `dsh-v0.2.2-rc.1`), independent of the Desktop version.
 
 After verification, replace the sole value in [`desktop/UPSTREAM_COMMIT`](desktop/UPSTREAM_COMMIT). When synchronization targets an original-project tag, record that exact tag name; when it targets an untagged commit, record its full SHA. Never append history, record fork HEAD, or let tooling infer or rewrite it. Mirror a synchronized original-project tag into the fork, preserving its target.
 
@@ -151,7 +151,7 @@ Package groups: [packages/README.md](packages/README.md). [Experimental status](
 ## Commands
 
 ```sh
-pnpm install            # pnpm workspaces, node ^22.19 || >=24
+pnpm install            # pnpm workspaces, node >=24.9
 pnpm run clean           # remove build outputs and safe residue from deleted packages
 pnpm run test           # unit tests
 pnpm run test:coverage  # CI coverage gate: per-file 100% on packages/*/*/src
@@ -199,12 +199,13 @@ Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and 
 ## Conventions
 
 - Packages use `@deepseek-ai/dsh-<name>`; vendor is [rescoped](docs/rescope.md) and `private: true`. Harness packages declare `@deepseek-ai/cordis` in `peerDependencies`/`devDependencies`. Workspace dependency sections use DSH `workspace:*`, vendor/native `workspace:~` ([rules](.agents/notes/implemented/process/2026-08-10-npm-release-sequences.md)).
-- ESM everywhere (`"type": "module"`). Use package names across packages and `.ts` in local relative imports. Config subprocesses run built `lib/` under plain Node; source regressions use their declared launcher ([testing policy](docs/testing.md#test-subprocess-launch-modes)). The `dsh` CLI source launch runs through tsx's ESM-only hook (`node --import tsx/esm`); modules it reaches must stay ESM (no CJS-only exports) — Node's native TypeScript modes are unavailable across the engines range ([source-launch contract](.agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.md)). Raw/Web `cordis.yml` bare plugins must appear in their resolver manifest's `dependencies`; `verify-cordis-config` enforces it.
-- **Registrations are effects**: every contribution goes through `ctx.effect()` / `ctx.on()`; a registry's `register()` returns the disposer.
+- ESM everywhere (`"type": "module"`). Use package names across packages and `.ts` in local relative imports. Config subprocesses run built `lib/` under plain Node; source regressions use their declared launcher ([testing policy](docs/testing.md#test-subprocess-launch-modes)). The `dsh` CLI source launch runs through tsx's ESM-only hook (`node --import tsx/esm`); modules it reaches must stay ESM (no CJS-only exports) ([source-launch contract](.agents/notes/implemented/architecture/2026-07-29-dsh-source-launch-tsx-esm.md)). Raw/Web `cordis.yml` bare plugins must appear in their resolver manifest's `dependencies`; `verify-cordis-config` enforces it.
+- **Registrations are effects**: every contribution goes through `ctx.effect()` / `ctx.on()`; a registry's `register()` returns the disposer, directly or through its documented registration handle.
 - **Typed events use declaration merging** and merge-extensible maps. Event JSDoc needs `@mode` and payload `@param`. Public service methods document parameters and non-void returns. `SessionEventMap` members are required-on-read unless the envelope carries `ignorable: true`. Bump `SESSION_FORMAT_VERSION` only when existing discriminators cannot prevent unsafe interpretation; same-version changes require safe reader behavior ([review](.agents/notes/implemented/process/2026-10-08-session-reader-compatibility-review.md)).
 - **Switch on discriminant tags.** Closed unions end in `assertNever`; merge-extensible unions fall through a documented default.
 - **Waterfall listeners MUST call `next()`** to delegate; returning without it short-circuits the chain ([semantics](docs/cordis-primer.md#cordis-waterfall-semantics)).
 - **Model-visible ⟺ logged**: anything that reaches a model request must be reconstructable from the session log; a new model-visible input requires a session event.
+- **Session projections:** follow [dsh-session-projection](.agents/skills/dsh-session-projection/SKILL.md) when creating, extending, or reviewing one, or migrating a fold helper to one.
 - **Plugins, not loop changes**: new behavior goes on documented extension points; changing `agent-loop` requires updating docs/architecture.md.
 - **A capability seam comprises Service Definition / Service Provider / Consumer roles.** It is complete, never one role; split only when roles evolve independently ([glossary](docs/glossary.md#capability-seam)).
 - **Prefer maintained dependencies over hand-rolling** when they genuinely delete owned code and tests ([policy](.agents/notes/implemented/process/2026-07-26-dependencies-over-hand-rolling.md)).
@@ -224,13 +225,14 @@ Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and 
 - **Tests describe behavior, not correctness.** Change obsolete behavior with its tests; explain why in the PR.
 - **Create Agent Notes only for durable decision rationale;** mechanical/local edits are exempt, including local UI changes ([scope](.agents/notes/README.md#when-to-write-one)). Archived notes are frozen: never edit or treat them as current authority ([archive policy](.agents/notes/README.md#archiving-and-deletion)).
 - **Official plugin artwork:** use [dsh-official-plugin-artwork](.agents/skills/dsh-official-plugin-artwork/SKILL.md) for official and official experimental plugin icons; obtain designer approval before landing new glyphs.
-- **Client UI copy is locale-owned.** Route product text through typed dictionaries and `t` or localized primitive props; `verify-client-ui-i18n` rejects hardcoded copy ([decision](.agents/notes/implemented/architecture/2026-08-23-locale-owned-client-ui-copy.md)).
+- **Client UI copy is locale-owned.** Route product text through typed dictionaries and `t` or localized primitive props; `verify-client-ui-i18n` rejects hardcoded copy ([decision](.agents/notes/implemented/architecture/2026-08-23-locale-owned-client-ui-copy.md)). English copy, including plugin titles, uses sentence case ([rule](.agents/skills/dsh-prose-standard/SKILL.md#required-coverage-by-prose-location)).
 - **Testing policy** — [docs/testing.md](docs/testing.md). Every non-trivial model- or product-user-visible change updates a keyless recorded-session snapshot; [snapshot ownership](snapshots/AGENTS.md) reserves the top-level tree for session-driven cases and keeps other expected output owner-local. Fixtures replay on macOS/Linux; fix fixtures, not normalizers.
 - **Design each tool's UI presentation up front.** Host presenters stay pure; Web cards derive from raw events and persisted result metadata ([cookbook](docs/cookbook/adding-a-tool.md)).
 - **Plan unit, e2e, and snapshot coverage** for capability seams, lifecycle paths, and transcript output; include missing snapshot-harness support in the same change.
 - **Both SDKs project the loop.** Agent-loop, session-lifecycle, and `SessionEventMap` changes update the TypeScript and Python SDK expected outputs in the same PR; `pnpm run test` covers neither ([surfaces](docs/testing.md#when-a-snapshot-test-is-required)).
 - **Choose PR history deliberately.** Split independent changes and fix the introducing PR before propagation. Standalone/stack branches may merge-forward or rebase. Rewrites use `--force-with-lease`, abort on remote movement, never raw `--force`; preserve an in-progress merge-forward checkpoint before taking a newer base ([rationale](.agents/notes/implemented/process/2026-08-02-native-github-stacks-and-optional-rebases.md)).
 - **Labels:** one PR `kind/*`, all material `area/*`, and native Issue Type ([taxonomy](.agents/notes/implemented/process/2026-08-08-unified-github-label-taxonomy.md)).
+- **PR descriptions:** write and update every PR description with [dsh-pr-description](.agents/skills/dsh-pr-description/SKILL.md).
 - TODO markers: `FIXME`/`TODO`/`XXX` by urgency ([semantics](docs/development.md)).
 - Files end with exactly one trailing newline; `git diff --cached --check` (pre-commit) gates it.
 

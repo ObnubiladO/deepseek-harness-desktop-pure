@@ -2,7 +2,7 @@
 
 Status: implemented
 
-English | [中文](2026-10-24-desktop-sync-dsh-v0.2.1-rc.3.zh.md)
+English | [中文](2026-10-24-desktop-sync-dsh-0.2.1-rc.3.zh.md)
 
 ## Problem
 

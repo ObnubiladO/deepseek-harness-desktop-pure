@@ -55,3 +55,6 @@ worktrees/
 .typert-*/
 desktop/runtime/src/bridge-script.generated.ts
 native/system/test/bin/
+
+# Generated company-signed CUA release record.
+/packages/experimental/cua-macos/cua-helper.json
