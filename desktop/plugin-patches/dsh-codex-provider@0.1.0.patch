@@ -1,0 +1,41 @@
+diff --git a/lib/client.js b/lib/client.js
+index d06788639b8dfac92090ea580aa5e1e24ee6abd2..c9b080c68f275e020e76102a147733dd50ab203f 100644
+--- a/lib/client.js
++++ b/lib/client.js
+@@ -29,19 +29,23 @@ window.__ModuleLoader__.load({
+     }
+     const CODEX_REMOTE = Object.freeze({
+       package: "dsh-codex-provider",
+-      descriptors: ["status", "loginStart", "loginStatus", "loginCancel", "importExisting", "logout"].map((method) => ({
+-        id: `dsh-codex-provider#codexProvider/${method}`,
+-        service: "codexProvider",
+-        namespace: "codexProvider",
+-        method,
+-        invocation: { kind: "direct" },
+-        parameters: [],
+-        result: {
+-          mode: "strict",
+-          typeSymbol: `dsh-codex-provider#codexProvider/${method}:result`,
+-          schema: resultSchema(method),
+-        },
+-      })),
++      descriptors: ["status", "loginStart", "loginStatus", "loginCancel", "importExisting", "logout"].map((method) => {
++        const schema = resultSchema(method)
++        return {
++          id: `dsh-codex-provider#codexProvider/${method}`,
++          service: "codexProvider",
++          namespace: "codexProvider",
++          method,
++          invocation: { kind: "direct" },
++          parameters: [],
++          result: {
++            mode: "strict",
++            typeSymbol: `dsh-codex-provider#codexProvider/${method}:result`,
++            schema,
++            create: () => schema,
++          },
++        }
++      }),
+     });
+
+     const zh = {
