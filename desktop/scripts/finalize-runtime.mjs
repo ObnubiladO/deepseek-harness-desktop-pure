@@ -2,11 +2,14 @@ import { execFile } from 'node:child_process'
 import { access, readdir, readFile, realpath } from 'node:fs/promises'
 import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { pruneRuntime, runtimeTarget } from './runtime-file-policy.mjs'
 
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const modules = resolve(desktop, 'src-tauri/rt/node_modules')
 
 await validateRuntimeLayout(modules)
+// The closure check runs after pruning so it also proves the policy removed nothing a package needs.
+await reportPrune(await pruneRuntime(modules, runtimeTarget()))
 await validatePeerClosure(modules)
 
 const helper = await findFile(modules, 'ensure-spawn-helper.mjs')
@@ -19,6 +22,16 @@ if (helper !== undefined) {
       else reject(error)
     })
   })
+}
+
+async function reportPrune({ officeEngine, omitted }) {
+  const mebibytes = bytes => `${(bytes / 1048576).toFixed(1)} MiB`
+  const rows = [...omitted].sort((a, b) => b[1].bytes - a[1].bytes)
+  const files = rows.reduce((sum, [, total]) => sum + total.files, 0)
+  const bytes = rows.reduce((sum, [, total]) => sum + total.bytes, 0)
+  const detail = rows.map(([reason, total]) => `${reason} ${total.files} (${mebibytes(total.bytes)})`).join(', ')
+  process.stdout.write(`Desktop runtime omits ${files} files (${mebibytes(bytes)})${detail === '' ? '' : `: ${detail}`}.\n`)
+  process.stdout.write(`Desktop runtime keeps the LibreOffice engine ${officeEngine ?? '(no kit deployed)'}.\n`)
 }
 
 async function findFile(directory, name) {

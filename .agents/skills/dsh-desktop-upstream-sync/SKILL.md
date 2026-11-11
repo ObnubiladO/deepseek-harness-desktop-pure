@@ -103,6 +103,10 @@ Verify the finished installer rather than the binary it was built from: extract 
 
 `bundle:prepare` fails when a deployed `@deepseek-ai` package cannot resolve a declared dependency or peer (`desktop/scripts/finalize-runtime.mjs`). Upstream declares its collaborators as peers, which `pnpm deploy` provides only when `desktop/runtime/package.json` lists them, so declare each target the failure names there.
 
+`bundle:prepare` also prunes the deploy with `desktop/scripts/runtime-file-policy.mjs`, which mirrors upstream's Desktop policy (`apps/desktop/scripts/runtime-file-policy.ts`) but keeps package-manager metadata. Each cycle, run `git diff <previous-target> <verified-upstream-sha> -- apps/desktop/scripts/runtime-file-policy.ts scripts/libreoffice-packages.mjs` and port the omissions that also hold for the web runtime. Before publishing, compare both installers' sizes with the previous release and explain any growth beyond a few MiB.
+
+Keep scratch scripts and local installers outside `.dsh-build/`: `pnpm run clean` empties that directory.
+
 The multi-window line is retired at the owner's request (since 0.2.2): do not rebuild or rebase it, and never publish it.
 
 ## Completion checks
