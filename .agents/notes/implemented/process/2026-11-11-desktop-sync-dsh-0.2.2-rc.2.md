@@ -39,6 +39,8 @@ Taking either side of a conflicted file wholesale was rejected after it had alre
 
 Desktop proceeds to an independent `0.3.1` release on this base. Third-party plugin bundles need the exemption granted again for runtime `0.2.2-rc.2` where their own ranges do not cover it.
 
+The release workflow's macOS job moved from `macos-14` to `macos-latest`, upstream's own label for Apple Silicon: GitHub retired the `macos-14` image during this cycle, and the first release run was refused before a runner was assigned.
+
 `0.3.0` users carry the two older peer gaps latently. Neither is reachable in normal use: the session controller's browser bundle inlines the import, and DeepDive's `web` profile does not start the SDK JSON-RPC server. `0.3.1` closes both, and the new gate keeps an unresolvable peer from shipping again.
 
 The `@deepseek-ai/dsh-desktop` name collision remains: `desktop/` and upstream's `apps/desktop` share the name, so `pnpm --filter @deepseek-ai/dsh-desktop` matches both packages and `scripts/local-bundle-registry.spec.ts` fails on the duplicate.

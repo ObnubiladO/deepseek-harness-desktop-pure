@@ -76,7 +76,8 @@ jobs:
       matrix:
         include:
           - platform: macos-arm64
-            runner: macos-14
+            # macos-latest is Apple Silicon; GitHub retired the macos-14 image.
+            runner: macos-latest
             target: aarch64-apple-darwin
             bundle: dmg
           - platform: windows-x64

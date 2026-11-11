@@ -39,6 +39,8 @@ Status: implemented
 
 Desktop 在此基线上推进独立的 `0.3.1` 发行。若第三方插件包自身的范围不覆盖运行时 `0.2.2-rc.2`，需要为其重新授予豁免。
 
+发布工作流的 macOS 任务从 `macos-14` 改为 `macos-latest`，即上游自己用于 Apple 芯片的标签：GitHub 在本轮期间停用了 `macos-14` 镜像，第一次发布运行在分配运行器之前就被拒绝了。
+
 `0.3.0` 的用户潜在地带着那两个更早的 peer 缺口。两者在正常使用中都不会被触及：会话控制器的浏览器包已内联该导入，而 DeepDive 的 `web` profile 不会启动 SDK JSON-RPC 服务器。`0.3.1` 补上了这两个缺口，新门禁也让无法解析的 peer 不会再次被发布。
 
 `@deepseek-ai/dsh-desktop` 的名称冲突仍然存在：`desktop/` 与上游的 `apps/desktop` 同名，因此 `pnpm --filter @deepseek-ai/dsh-desktop` 会同时匹配两个包，`scripts/local-bundle-registry.spec.ts` 也因重复的包名而失败。
