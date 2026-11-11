@@ -133,7 +133,7 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   const connectingShownAt = useRef<number | undefined>(undefined)
 
   // The ledger tick keeps the nav rows fresh: registrants re-register with
-  // freshly localized text on locale change, and the trigger/header/close
+  // freshly localized text on locale change, and the trigger/update/header/close
   // seats re-render through their own outlets' subscriptions.
   const rows = useSections(s => s)
   const desktopUpdate = useDesktopUpdate(state => state)
@@ -223,26 +223,29 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
   return (
     <>
       <div className={clsx(css.triggerRow, !wide && css.railRow)}>
-        {renderSlot('settings.launcher', {
-          wide, settingsOpen: open, openSettings: (sectionId) => {
-            if (sectionId === undefined) actions.open()
-            else actions.openSection(sectionId)
-          },
-          ...(shortcut?.keys.length ? { settingsShortcut: { keys: shortcut.keys, aria: shortcut.aria } } : {}),
-          openOnboarding: (id) => { close(); setRequestedOnboarding(id) },
-        }, { fallback: <Tooltip disabled={open} label={t('trigger')} shortcutKeys={shortcut?.keys}>
-          <button
-            type="button"
-            className={clsx(css.trigger, !wide && css.rail)}
-            aria-label={t('trigger')}
-            aria-keyshortcuts={shortcut?.aria}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            onClick={() => { actions.open() }}
-          >
-            {renderSlot('settings.trigger', { wide })}
-          </button>
-        </Tooltip> })}
+        <div className={css.triggerColumn}>
+          {renderSlot('settings.launcher', {
+            wide, settingsOpen: open, openSettings: (sectionId) => {
+              if (sectionId === undefined) actions.open()
+              else actions.openSection(sectionId)
+            },
+            ...(shortcut?.keys.length ? { settingsShortcut: { keys: shortcut.keys, aria: shortcut.aria } } : {}),
+            openOnboarding: (id) => { close(); setRequestedOnboarding(id) },
+          }, { fallback: <Tooltip disabled={open} label={t('trigger')} shortcutKeys={shortcut?.keys}>
+            <button
+              type="button"
+              className={clsx(css.trigger, !wide && css.rail)}
+              aria-label={t('trigger')}
+              aria-keyshortcuts={shortcut?.aria}
+              aria-haspopup="dialog"
+              aria-expanded={open}
+              onClick={() => { actions.open() }}
+            >
+              {renderSlot('settings.trigger', { wide })}
+            </button>
+          </Tooltip> })}
+          {renderSlot('settings.update', { wide })}
+        </div>
         <ConnectionIndicator
           state={wide && desktopUpdate.presentation?.phase !== 'installing' ? connectionIndicator : undefined}
           disconnectedLabel={t('connection.error')}
