@@ -25,7 +25,8 @@ Never reset an existing fork line to the upstream target as a substitute for syn
    ```
 
 4. Resolve textual conflicts and inspect overlapping automatic merges by responsibility. Keep upstream-owned Harness behavior from the verified upstream result unless a concrete current fork rule is an integration blocker. Keep fork-owned branding, Desktop packaging, native integration, and sanctioned seams.
-5. Commit the resolved tree only after its relevant checks pass. Record this commit as the manual integration reference.
+5. Prove the resolution dropped nothing: run `node desktop/scripts/verify-merge-survival.mjs` (it compares `HEAD` with `MERGE_HEAD`) and restore or explain every line it lists. Never resolve a conflicted file by taking one side wholesale; that silently discards the other side's work while each side's own tests keep passing.
+6. Commit the resolved tree only after its relevant checks pass. Record this commit as the manual integration reference.
 
 A conflict-free merge still needs review. A source diff or generated artifact check does not prove that the Desktop runtime and UI remain functional.
 
@@ -92,13 +93,17 @@ The right-hand count is the fork's commits above upstream and the left-hand coun
 
 Update `desktop/UPSTREAM_COMMIT` only after the target and integrated tree are verified. If the target is a tag, mirror that exact tag target only after explicit authorization. Stop without pushing if the remote branch moved, the candidate tree differs from the manual integration tree, a relevant check fails, or any fork delta remains unexplained.
 
+A lane with known host-specific failures passes only when its failing tests match the previous cycle's list. Judge it by that list, never by its exit code, and investigate every new entry.
+
 ## Build the release installers
 
 Bump the Desktop version **before** preparing the bundle, never after. `bundle:prepare` stamps the deployed runtime's own `package.json`, and both the About panel and the update seat read that stamp (`desktop/runtime/src/surface.ts`), so a bundle prepared first reports the previous version — and the update seat then offers the new release as an update forever. The order is `version:set <version>` → `bundle:prepare` → gates → installers, and the version decision (patch increment versus prerelease suffix) matters too: a prerelease suffix ranks below its release in semver precedence, so it is never offered to anyone already on the release.
 
 Verify the finished installer rather than the binary it was built from: extract `rt/package.json` and `rt/node_modules/@deepseek-ai/dsh-app-boot/package.json` from the artifact, confirm the first equals the bumped version, then run `desktop/scripts/verify-sidecar-sweep.mjs` against the release binary. A local build and a CI build of the same commit can legitimately disagree here — CI checks out the already-bumped tree, while a local bundle may predate the bump.
 
-The multi-window installer stays local and separate: build it on its `wip/multi-window-<version>-local` branch rebased onto the new base, verify both cookie markers in its embedded binary, and never publish it.
+`bundle:prepare` fails when a deployed `@deepseek-ai` package cannot resolve a declared dependency or peer (`desktop/scripts/finalize-runtime.mjs`). Upstream declares its collaborators as peers, which `pnpm deploy` provides only when `desktop/runtime/package.json` lists them, so declare each target the failure names there.
+
+The multi-window line is retired at the owner's request (since 0.2.2): do not rebuild or rebase it, and never publish it.
 
 ## Completion checks
 

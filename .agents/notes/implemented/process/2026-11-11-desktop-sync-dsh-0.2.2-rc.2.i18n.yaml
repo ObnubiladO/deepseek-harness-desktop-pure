@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for 2026-11-11-desktop-sync-dsh-0.2.2-rc.2.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-11-11-desktop-sync-dsh-0.2.2-rc.2.md
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2:
+  en: 20a33373f52922a3
+  zh: f23e32ecde676fe1
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/problem:
+  en: 5477aeebab75477c
+  zh: 60c4e4d4b7876253
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/decision:
+  en: 09e03c9625798c90
+  zh: a497c448687bbe41
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/alternatives-considered:
+  en: 1f90ae17246bc8b2
+  zh: efc635507269d7ba
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/consequences:
+  en: 7993ea05d03a7c27
+  zh: a87fe659a695eeb7
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/testing:
+  en: b4166dbb7e685710
+  zh: 4df9cac4fc267f17
+/agent-note-desktop-synchronization-with-dsh-v0-2-2-rc-2/environment-note-losses-that-tests-written-by-one-side-cannot-see:
+  en: 37f814775d6d2df2
+  zh: ca03abe0ea0fe6f6
