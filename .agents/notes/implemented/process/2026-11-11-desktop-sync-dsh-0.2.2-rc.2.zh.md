@@ -24,7 +24,7 @@ Status: implemented
 
 - **`SettingsRoot.tsx`** 采纳上游支持分区定位的 `openSettings`，并保留本 fork 的 `triggerColumn` 包裹层及其 `settings.update` 渲染，即 Desktop 更新席位。
 - **`session-log-export`** 采纳上游的 FIFO 浮层与按操作的 `order`，并保留本 fork 可等待的原生保存载体、`cancelled` 状态与 `successMode`。上游「销毁后不再保存」的守卫被延伸到可等待的原生保存之后：原生对话框可能比销毁存活得更久，此后控制器不得再发布任何状态；这一 await 之后的检查沿用了上游自己的 lint 写法，用来说明 TypeScript 无法跨越 `await` 看到的收窄。
-- **两份导出测试** 均以上游重写后的测试套件为基础（包括其七个新测试），再加入本 fork 的原生保存测试、一个针对延伸后守卫的销毁测试（移除守卫时它会失败），以及一个测试：被取消的原生保存不会在上游 FIFO 中留下模态框。
+- **两份导出测试** 均以上游重写后的测试套件为基础（包括其八个新测试），再加入本 fork 的原生保存测试、一个针对延伸后守卫的销毁测试（移除守卫时它会失败），以及一个测试：被取消的原生保存不会在上游 FIFO 中留下模态框。
 - **`desktop/runtime/package.json`** 声明了全部三个缺失的 peer；`desktop/scripts/finalize-runtime.mjs` 现在会在任一已部署的 `@deepseek-ai` 包无法在部署内解析其非可选的 `@deepseek-ai` 依赖或 peer 时让部署失败。它报告 339 个包全部可解析；隐藏 `dsh-error` 时，它会点名该包及其十个依赖方。
 - **`desktop/scripts/build-runtime.mjs`** 改为读取稳定的 `lib/profile-boot.js` 门面，并在其不再导出 `runProfile` 时立即失败。
 - **`desktop/scripts/verify-merge-survival.mjs`** 是新增脚本：针对两边都修改过的文件，列出任一方新增、但已不在工作区中的行。同步技能现在要求在提交集成之前运行它。
@@ -53,7 +53,7 @@ Desktop 在此基线上推进独立的 `0.3.1` 发行。若第三方插件包自
 
 ## Environment note: losses that tests written by one side cannot see
 
-第一轮解析中，六个冲突文件里有三个是整体采用了某一边。`SettingsRoot.tsx` 采用了上游版本，悄无声息地丢掉了 Desktop 更新席位；两份导出测试采用了本 fork 的版本，悄无声息地丢掉了上游的七个新测试。随后该包的测试以 123/123 通过，因为本该失败的测试恰恰就是被删掉的那些。
+第一轮解析中，六个冲突文件里有三个是整体采用了某一边。`SettingsRoot.tsx` 采用了上游版本，悄无声息地丢掉了 Desktop 更新席位；两份导出测试采用了本 fork 的版本，悄无声息地丢掉了上游的八个新测试。随后该包的测试以 123/123 通过，但这一结果对上游的新行为毫无说明力，因为上游的新测试已经一个都不在测试套件里了。
 
 本应发现问题的检查被概括了，而不是被阅读。`gui` 泳道报告的失败是五项而非已知的三项，多出的两项正是断言更新席位的 `SettingsRoot trigger` 测试；它们却凭退出码被归入了已知失败。一次 lint 失败被解释为合并后控制器中 rejection 路径的问题，而它的日志显示的是十一处缩进错误和两个多余的可选链。`0.3.0` 的 `scripts` 泳道有分布在六个文件中的十一项失败，报告里却只描述了一个不稳定的 spec。
 

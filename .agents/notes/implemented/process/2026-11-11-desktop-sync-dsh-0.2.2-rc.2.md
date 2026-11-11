@@ -24,7 +24,7 @@ Resolutions, each reconciling both sides' intent:
 
 - **`SettingsRoot.tsx`** takes upstream's section-aware `openSettings` and keeps the fork's `triggerColumn` wrapper with its `settings.update` render, the Desktop update seat.
 - **`session-log-export`** takes upstream's FIFO overlay and per-operation `order` and keeps the fork's awaited native save carrier, `cancelled` status, and `successMode`. Upstream's no-save-after-disposal guard is extended past the awaited native save, because a native dialog can outlive disposal and the controller must publish nothing afterwards; the post-await check carries upstream's own lint idiom for a narrowing TypeScript cannot see across `await`.
-- **Both export specs** start from upstream's rewritten suites, including their seven new tests, and add the fork's native-save tests, a disposal test for the extended guard (it fails when the guard is removed), and a test that a cancelled native save leaves no modal behind upstream's FIFO.
+- **Both export specs** start from upstream's rewritten suites, including their eight new tests, and add the fork's native-save tests, a disposal test for the extended guard (it fails when the guard is removed), and a test that a cancelled native save leaves no modal behind upstream's FIFO.
 - **`desktop/runtime/package.json`** declares all three missing peers, and `desktop/scripts/finalize-runtime.mjs` now fails the deploy when any deployed `@deepseek-ai` package cannot resolve a non-optional `@deepseek-ai` dependency or peer within the deploy. It reports 339 packages resolved; with `dsh-error` hidden it names the package and its ten dependents.
 - **`desktop/scripts/build-runtime.mjs`** reads the stable `lib/profile-boot.js` facade and fails fast if it stops exporting `runProfile`.
 - **`desktop/scripts/verify-merge-survival.mjs`** is new: for files both sides changed, it lists lines either side added that are absent from the working tree. The sync skill now requires it before the integration commit.
@@ -53,7 +53,7 @@ The `gui` lane passes 13,622 tests and fails exactly the three known locale-depe
 
 ## Environment note: losses that tests written by one side cannot see
 
-The first resolution pass resolved three of the six conflicted files by taking one side wholesale. `SettingsRoot.tsx` took upstream's version and silently dropped the Desktop update seat; both export specs took the fork's versions and silently dropped upstream's seven new tests. The package's tests then passed 123 of 123, because the tests that would have failed were the ones removed.
+The first resolution pass resolved three of the six conflicted files by taking one side wholesale. `SettingsRoot.tsx` took upstream's version and silently dropped the Desktop update seat; both export specs took the fork's versions and silently dropped upstream's eight new tests. The package's tests then passed 123 of 123, a result that said nothing about upstream's new behavior because none of upstream's new tests remained in the suite.
 
 The checks that should have caught it were summarized instead of read. The `gui` lane reported five failures rather than the known three, and the two extra were `SettingsRoot trigger` tests asserting the update seat; they were filed as the known failures by exit code. A lint failure was explained as a rejection-path problem in the merged controller when its log showed eleven indentation errors and two dead optional chains. And `0.3.0`'s `scripts` lane had eleven failures in six files while its report described one flaky spec.
 
