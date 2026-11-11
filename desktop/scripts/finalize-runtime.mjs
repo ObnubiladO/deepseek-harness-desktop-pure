@@ -1,12 +1,13 @@
 import { execFile } from 'node:child_process'
-import { readdir } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { access, readdir, readFile, realpath } from 'node:fs/promises'
+import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const desktop = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const modules = resolve(desktop, 'src-tauri/rt/node_modules')
 
 await validateRuntimeLayout(modules)
+await validatePeerClosure(modules)
 
 const helper = await findFile(modules, 'ensure-spawn-helper.mjs')
 if (helper !== undefined) {
@@ -41,6 +42,60 @@ async function validateRuntimeLayout(directory) {
     throw new Error(`desktop runtime contains package symlinks:\n${packageLinks.join('\n')}`)
   }
   process.stdout.write(`Desktop runtime uses a hoisted package tree (${links.length} executable links).\n`)
+}
+
+/**
+ * Fail when a deployed @deepseek-ai package cannot resolve one of its
+ * non-optional @deepseek-ai dependencies or peers. Upstream packages declare
+ * their collaborators as peers, and `pnpm deploy` only provides the peers that
+ * desktop/runtime/package.json lists, so a peer upstream introduces is
+ * otherwise left out silently and fails only when something first imports it,
+ * which a boot check cannot see when that import is lazy.
+ * @param directory - the deployed runtime's node_modules directory.
+ */
+async function validatePeerClosure(directory) {
+  const root = dirname(directory)
+  const packages = new Map()
+  for (const scope of await scopeDirectories(directory)) {
+    for (const name of await readdir(scope).catch(() => [])) {
+      const manifest = await readFile(resolve(scope, name, 'package.json'), 'utf8').catch(() => undefined)
+      if (manifest !== undefined) packages.set(await realpath(resolve(scope, name)), JSON.parse(manifest))
+    }
+  }
+  const missing = []
+  for (const [location, manifest] of packages) {
+    const optional = manifest.peerDependenciesMeta ?? {}
+    const wanted = new Set([
+      ...Object.keys(manifest.dependencies ?? {}),
+      ...Object.keys(manifest.peerDependencies ?? {}).filter(name => optional[name]?.optional !== true),
+    ].filter(name => name.startsWith('@deepseek-ai/')))
+    for (const name of wanted) {
+      if (!await resolvableWithin(root, location, name)) missing.push(`${manifest.name} -> ${name}`)
+    }
+  }
+  if (missing.length > 0) {
+    throw new Error(`desktop runtime cannot resolve declared @deepseek-ai dependencies; add each target to desktop/runtime/package.json:\n${missing.join('\n')}`)
+  }
+  process.stdout.write(`Desktop runtime resolves every @deepseek-ai dependency of ${packages.size} packages.\n`)
+}
+
+async function scopeDirectories(directory) {
+  const stores = await readdir(resolve(directory, '.pnpm')).catch(() => [])
+  return [
+    resolve(directory, '@deepseek-ai'),
+    ...stores.map(entry => resolve(directory, '.pnpm', entry, 'node_modules', '@deepseek-ai')),
+  ]
+}
+
+/** Node's bare-specifier lookup, stopped at the deploy root so a dev checkout cannot mask a gap. */
+async function resolvableWithin(root, location, name) {
+  for (let current = location; ; current = dirname(current)) {
+    if (basename(current) !== 'node_modules') {
+      const found = await access(resolve(current, 'node_modules', name, 'package.json')).then(() => true, () => false)
+      if (found) return true
+    }
+    if (current === root || dirname(current) === current) return false
+  }
 }
 
 async function findLinks(directory) {

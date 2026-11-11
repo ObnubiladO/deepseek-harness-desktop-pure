@@ -100,3 +100,6 @@ Verify the finished installer rather than the binary it was built from: extract 
 
 The multi-window installer stays local and separate: build it on its `wip/multi-window-<version>-local` branch rebased onto the new base, verify both cookie markers in its embedded binary, and never publish it.
 
+## Completion checks
+
+Before declaring synchronization complete, fetch the exact upstream ref, confirm its remote SHA, and require `git merge-base --is-ancestor <verified-upstream-sha> HEAD` plus `git rev-list --count HEAD..<verified-upstream-sha>` equal to `0`. For a candidate, compare its tree with the reviewed integration tree. For a `master` landing, verify the merge commit's recorded `master` tip is the first parent, the validated candidate is the second parent, and its tree equals the candidate; later governance or release-note commits are checked separately. Report ahead/behind with `git rev-list --left-right --count <verified-upstream-sha>...HEAD`: left is upstream-only, right is fork-only. `origin/master...HEAD` measures local/remote delivery only, never the upstream lead.

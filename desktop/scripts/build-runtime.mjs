@@ -44,16 +44,16 @@ await build({
 await rm(deployDir, { recursive: true, force: true })
 
 async function writeProfileBootBridge() {
-  const bin = await readFile(resolve(root, 'apps/cli/lib/bin.js'), 'utf8')
-  // Upstream ships the facade either as a content-hashed chunk or, since the
-  // profile-resolution release, under the stable `profile-boot.js` name.
-  const facades = [...bin.matchAll(/import\("\.\/(profile-boot(?:-[^"]+)?\.js)"\)/g)]
-    .map(match => match[1])
-  if (facades.length !== 1 || facades[0] === undefined) {
-    throw new Error(`expected built dsh bin to import one profile-boot facade, found ${facades.length}`)
+  // Upstream keeps the compiled profile-boot facade at the stable
+  // lib/profile-boot.js path. Its CLI launcher imports a content-hashed chunk
+  // instead, so parsing bin.js for a facade import no longer works; read the
+  // facade directly and fail fast if it stops exporting runProfile.
+  const facade = await readFile(resolve(root, 'apps/cli/lib/profile-boot.js'), 'utf8')
+  if (!/export\s*\{[^}]*\brunProfile\b/.test(facade)) {
+    throw new Error('expected apps/cli/lib/profile-boot.js to export runProfile')
   }
-  const specifier = `../node_modules/@deepseek-ai/dsh/lib/${facades[0]}`
-  await writeFile(resolve(outdir, 'profile-boot.mjs'), `export { runProfile } from ${JSON.stringify(specifier)}\n`)
+  const bridge = "export { runProfile } from '../node_modules/@deepseek-ai/dsh/lib/profile-boot.js'\n"
+  await writeFile(resolve(outdir, 'profile-boot.mjs'), bridge)
 }
 
 /**

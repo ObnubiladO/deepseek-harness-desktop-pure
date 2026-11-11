@@ -30,7 +30,7 @@ describe('SessionLogDownloadController', () => {
       'dsh-session-session-export-controller.zip',
     )
     expect(controller.store.getSnapshot().bySession[SID]).toEqual({
-      open: true, status: 'success', error: null, successMode: 'download-started',
+      order: 0, open: true, status: 'success', error: null, successMode: 'download-started',
     })
   })
 
@@ -45,7 +45,7 @@ describe('SessionLogDownloadController', () => {
     const download = controller.download(SID)
     await vi.waitFor(() => { expect(save).toHaveBeenCalledOnce() })
     expect(controller.store.getSnapshot().bySession[SID]).toEqual({
-      open: true, status: 'downloading', error: null,
+      order: 0, open: true, status: 'downloading', error: null,
     })
 
     saved.resolve('file-saved')
@@ -63,14 +63,34 @@ describe('SessionLogDownloadController', () => {
     save.mockResolvedValueOnce('file-saved')
     await controller.download(SID)
     expect(controller.store.getSnapshot().bySession[SID]).toEqual({
-      open: true, status: 'success', error: null, successMode: 'file-saved',
+      order: 0, open: true, status: 'success', error: null, successMode: 'file-saved',
     })
 
+    // A settled operation is not in flight, so the next request is a new
+    // operation and takes the next initiation order.
     save.mockResolvedValueOnce('cancelled')
     await controller.download(SID)
     expect(controller.store.getSnapshot().bySession[SID]).toEqual({
-      open: false, status: 'cancelled', error: null,
+      order: 1, open: false, status: 'cancelled', error: null,
     })
+  })
+
+  it('publishes nothing after disposal while a native save is still pending', async () => {
+    const saved = Promise.withResolvers<'file-saved'>()
+    const save = vi.fn(() => saved.promise)
+    const controller = new SessionLogDownloadController(async () => new Response('zip'), save)
+    const download = controller.download(SID)
+    await vi.waitFor(() => { expect(save).toHaveBeenCalledOnce() })
+    const beforeDisposal = controller.store.getSnapshot()
+    let disposed = false
+    const disposal = controller.dispose().then(() => { disposed = true })
+
+    saved.resolve('file-saved')
+    await download
+    await disposal
+
+    expect(disposed).toBe(true)
+    expect(controller.store.getSnapshot()).toBe(beforeDisposal)
   })
 
   it('collapses concurrent gestures and preserves a dismissed dialog', async () => {
@@ -96,6 +116,7 @@ describe('SessionLogDownloadController', () => {
     )
     await http.download(SID)
     expect(http.store.getSnapshot().bySession[SID]).toEqual({
+      order: 0,
       open: true,
       status: 'error',
       error: 'Export failed: HTTP 500 backend unavailable',
@@ -122,6 +143,7 @@ describe('SessionLogDownloadController', () => {
     )
     await native.download(SID)
     expect(native.store.getSnapshot().bySession[SID]).toEqual({
+      order: 0,
       open: true,
       status: 'error',
       error: 'native save failed',
@@ -144,6 +166,55 @@ describe('SessionLogDownloadController', () => {
     await expect(pending).resolves.toBeUndefined()
     expect(signal?.aborted).toBe(true)
     await expect(controller.download(SID)).resolves.toBeUndefined()
+    await controller.dispose()
+  })
+
+  it('waits for every aborted preflight and never saves a late successful response', async () => {
+    const first = Promise.withResolvers<Response>(), second = Promise.withResolvers<Response>()
+    const signals: AbortSignal[] = []
+    const save = vi.fn()
+    const fetcher = vi.fn((_input: string | URL, init?: RequestInit) => {
+      if (init?.signal === undefined || init.signal === null) throw new Error('Missing cancellation signal')
+      signals.push(init.signal)
+      return signals.length === 1 ? first.promise : second.promise
+    })
+    const controller = new SessionLogDownloadController(fetcher, save)
+    const a = controller.download(SID)
+    const b = controller.download('another' as SessionId)
+    const beforeDisposal = controller.store.getSnapshot()
+    let disposed = false
+    const disposal = controller.dispose().then(() => { disposed = true })
+    expect(signals.every(signal => signal.aborted)).toBe(true)
+    first.resolve(new Response('late ZIP'))
+    await a
+    expect(disposed).toBe(false)
+    second.reject(new Error('aborted second preflight'))
+    await b
+    await disposal
+    expect(disposed).toBe(true)
+    expect(save).not.toHaveBeenCalled()
+    expect(controller.store.getSnapshot()).toBe(beforeDisposal)
+  })
+
+  it('keeps per-operation initiation order across concurrent Sessions and repeated requests', async () => {
+    const response = Promise.withResolvers<Response>()
+    const fetcher = vi.fn(() => response.promise)
+    const save = vi.fn()
+    const controller = new SessionLogDownloadController(fetcher, save)
+    const first = controller.download(SID)
+    const other = controller.download('another' as SessionId)
+    const initial = controller.store.getSnapshot()
+    expect(initial.bySession[SID]?.order).toBe(0)
+    expect(initial.bySession.another?.order).toBe(1)
+    controller.dismiss(SID)
+    expect(controller.download(SID)).toBe(first)
+    expect(controller.store.getSnapshot().bySession[SID]).toMatchObject({ open: false, order: 0 })
+    response.resolve(new Response('zip'))
+    await Promise.all([first, other])
+    expect(save).toHaveBeenCalledTimes(2)
+    await controller.download(SID)
+    expect(controller.store.getSnapshot().bySession[SID]).toMatchObject({ open: true, order: 2 })
+    expect(controller.store.getSnapshot().bySession.another?.order).toBe(1)
     await controller.dispose()
   })
 
