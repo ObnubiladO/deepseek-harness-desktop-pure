@@ -280,7 +280,9 @@ const chatTemplateKwarg: z<ChatTemplateKwargValue> = z.union([
   z.const(null),
   z.object({
     $var: z.union(CHAT_TEMPLATE_VARS).required(),
-    omitWhenOff: z.boolean(),
+    // pi-ai's generated type spells this optional field `?: boolean | undefined`, which a schemastery
+    // field cannot express; validation is unchanged.
+    omitWhenOff: z.boolean() as z<boolean | undefined>,
   }),
 ])
 

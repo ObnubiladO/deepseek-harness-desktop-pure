@@ -73,3 +73,18 @@ describe('pi-ai SDK retry boundary', () => {
     })
   })
 })
+
+describe('pi-ai server-side continuation', () => {
+  it('keeps every session request complete instead of continuing a server-side thread', async () => {
+    streamSimple.mockImplementation(() => { throw new Error('mock SDK boundary') })
+
+    for await (const _chunk of gatewayAdapter().stream({
+      provider: 'local-gateway',
+      model: 'local-model',
+      messages: [],
+      sessionId: 'session-continuation' as never,
+    })) { /* drain */ }
+
+    expect(streamSimple.mock.calls[0]?.[2]).toMatchObject({ sessionId: 'session-continuation', disableContinuation: true })
+  })
+})

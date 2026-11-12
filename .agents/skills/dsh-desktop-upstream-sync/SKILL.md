@@ -107,6 +107,8 @@ Verify the finished installer rather than the binary it was built from: extract 
 
 Keep scratch scripts and local installers outside `.dsh-build/`: `pnpm run clean` empties that directory.
 
+Since 0.3.2, DeepDive carries `@earendil-works/pi-ai` 1.5.2 ahead of upstream, an owner-approved exception recorded in [the pi-ai note](../../notes/implemented/process/2026-11-12-desktop-pi-ai-ahead-of-upstream.md). At each sync, check upstream's pin in `packages/llm/llm-pi-ai/package.json`: once it reaches 1.5.2 or later, resolve every file that note lists to upstream's version and drop the fork-only entries; until then, keep the fork's version and port any upstream change to the 1.3.0 patch, the Electron patch policy, or the adapter.
+
 The multi-window line is retired at the owner's request (since 0.2.2): do not rebuild or rebase it, and never publish it.
 
 ## Completion checks

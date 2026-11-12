@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-11-12-desktop-pi-ai-ahead-of-upstream.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-11-12-desktop-pi-ai-ahead-of-upstream.md
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2:
+  en: 11c3301a7c51085e
+  zh: 7af8bfea31d1daf6
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2/problem:
+  en: 25472bd0af6adccf
+  zh: 84ec397c17a1b116
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2/decision:
+  en: 219bcc3dcff86e09
+  zh: 9f6ae24696de20db
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2/alternatives-considered:
+  en: fec809cb43adfa77
+  zh: 6940d5d8912a275a
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2/consequences:
+  en: 5e1852328874a73f
+  zh: 1f2a05ddf38a7caa
+/agent-note-pi-ai-1-5-2-ahead-of-upstream-for-claude-fable-5-2/testing:
+  en: 9879ff93f15d7821
+  zh: 36c939ac39a20360

@@ -28,8 +28,12 @@ export type PrefixDigests = Map<AssistantMessage, string>
 /** Wire protocol whose thinking signatures bind to the request prefix. */
 const PREFIX_BOUND_API = 'anthropic-messages'
 
-/** Seed of every digest chain; changing the digest input or its serialization requires a new seed. */
-const DIGEST_SEED = 'dsh-llm-pi-ai/prefix-binding/v1'
+/**
+ * Seed of every digest chain; changing the digest input or its serialization requires a new seed.
+ * v2: pi-ai 1.5 keeps root `$defs` in Anthropic tool schemas, so equal context objects can carry
+ * a different wire prefix than they did under 1.3.
+ */
+const DIGEST_SEED = 'dsh-llm-pi-ai/prefix-binding/v2'
 
 function chain(previous: string, value: unknown): string {
   return createHash('sha256').update(previous).update('\0').update(JSON.stringify(value)).digest('hex')

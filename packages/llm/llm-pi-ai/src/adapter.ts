@@ -477,6 +477,9 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.temperature === undefined ? {} : { temperature: options.temperature },
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
+        // pi-ai 1.5.1 enables Anthropic message threads (beta) for any request with a sessionId.
+        // DeepDive adopts pi-ai ahead of upstream for its catalog only, so requests stay complete.
+        disableContinuation: true,
         signal: watchdog.signal,
         headers: requestHeaders(profile.headers, options, model.baseUrl, this.config.prepareHeaders),
       })
