@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import { SessionLogDownloadController } from '../src/client/controller.ts'
+import { SessionLogDownloadController, type SessionLogDownloadSaveResult } from '../src/client/controller.ts'
 import { SessionLogDownloadDialog } from '../src/client/Dialog.tsx'
 import type { SessionLogDownloadDialogProps } from '../src/client/Dialog.tsx'
 import { en, zh } from '../src/client/locales.ts'
@@ -116,6 +116,28 @@ describe('SessionLogDownloadDialog', () => {
     await act(async () => { gate.reject(new Error('offline')); await pending })
     expect(b.view.queryByRole('dialog')).toBeNull()
     expect(b.controller.store.getSnapshot().bySession[SID]).toMatchObject({ status: 'error', open: false })
+  })
+
+  it('renders the native saved state separately from browser download state', async () => {
+    const b = bench(new SessionLogDownloadController(
+      async () => new Response('zip'),
+      async (): Promise<SessionLogDownloadSaveResult> => 'file-saved',
+    ))
+    await act(() => b.controller.download(SID))
+    expect(b.view.getByRole('dialog', { name: 'Session export complete' }).textContent).toContain(SID)
+  })
+
+  it('leaves no modal after a cancelled native save, even behind another open export', async () => {
+    const b = bench(new SessionLogDownloadController(
+      async () => new Response('zip'),
+      async (url): Promise<SessionLogDownloadSaveResult> => url.includes(OTHER) ? 'download-started' : 'cancelled',
+    ))
+    await act(() => b.controller.download(SID))
+    expect(b.view.queryByRole('dialog')).toBeNull()
+    await act(() => b.controller.download(OTHER))
+    expect(b.view.getByRole('dialog', { name: 'Session download started' }).textContent).toContain(OTHER)
+    close(b.view)
+    expect(b.view.queryByRole('dialog')).toBeNull()
   })
 
   it('uses localized fallback copy and ignores absent entries', () => {

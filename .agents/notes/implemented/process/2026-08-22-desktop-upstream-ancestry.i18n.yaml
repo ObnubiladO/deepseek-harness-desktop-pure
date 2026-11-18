@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-08-22-desktop-upstream-ancestry.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-08-22-desktop-upstream-ancestry.md
+/agent-note-desktop-upstream-ancestry-preservation:
+  en: 9bfc5c74bea0d1dd
+  zh: c00158e3bb50cf6f
+/agent-note-desktop-upstream-ancestry-preservation/problem:
+  en: 9cda112b9a3f4afc
+  zh: 610508b6242cfdf9
+/agent-note-desktop-upstream-ancestry-preservation/decision:
+  en: 7854287e1be17fb0
+  zh: 0f59196a02a65de3
+/agent-note-desktop-upstream-ancestry-preservation/alternatives-considered:
+  en: 0b83dd59e7a84a86
+  zh: 4a4f1e8593c4bb69
+/agent-note-desktop-upstream-ancestry-preservation/consequences:
+  en: aa86924c146087c0
+  zh: 403c7cc4387525bd

@@ -52,6 +52,7 @@ External packages installed for runtime use or embedded in distributed Host or b
 | [`@lexical/utils`](https://github.com/facebook/lexical) | MIT |
 | [`@modelcontextprotocol/client`](https://github.com/modelcontextprotocol/typescript-sdk) | MIT |
 | [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) | MIT |
+| [`@msgpack/msgpack`](https://github.com/msgpack/msgpack-javascript) | ISC |
 | [`@noble/hashes`](https://github.com/paulmillr/noble-hashes) | MIT |
 | [`@octokit/webhooks`](https://github.com/octokit/webhooks.js) | MIT |
 | [`@openai/codex`](https://github.com/openai/codex) | Apache-2.0 |
@@ -67,6 +68,7 @@ External packages installed for runtime use or embedded in distributed Host or b
 | [`@shikijs/langs`](https://github.com/shikijs/shiki) | MIT |
 | [`@standard-schema/spec`](https://github.com/standard-schema/standard-schema) | MIT |
 | [`@tanstack/react-virtual`](https://github.com/TanStack/virtual) | MIT |
+| [`@tauri-apps/api`](https://github.com/tauri-apps/tauri) | Apache-2.0 OR MIT |
 | [`@trycua/cua-driver`](https://github.com/trycua/cua) | MIT |
 | [`@vscode/ripgrep`](https://github.com/microsoft/vscode-ripgrep) | MIT |
 | [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit) | MIT |
@@ -160,6 +162,7 @@ pnpm applies local patches to the following packages at install time, so shipped
 
 - `@botiverse/oar@0.67.0` — [`patches/@botiverse__oar@0.67.0.patch`](patches/@botiverse__oar@0.67.0.patch)
 - `@earendil-works/pi-ai@1.3.0` — [`patches/@earendil-works__pi-ai@1.3.0.patch`](patches/@earendil-works__pi-ai@1.3.0.patch)
+- `@earendil-works/pi-ai@1.5.2` — [`patches/@earendil-works__pi-ai@1.5.2.patch`](patches/@earendil-works__pi-ai@1.5.2.patch)
 - `@electron/osx-sign@1.3.3` — [`patches/@electron__osx-sign@1.3.3.patch`](patches/@electron__osx-sign@1.3.3.patch)
 - `@fortune-sheet/core@1.0.4` — [`patches/@fortune-sheet__core@1.0.4.patch`](patches/@fortune-sheet__core@1.0.4.patch)
 - `@fortune-sheet/react@1.0.4` — [`patches/@fortune-sheet__react@1.0.4.patch`](patches/@fortune-sheet__react@1.0.4.patch)
@@ -217,6 +220,7 @@ External packages **directly declared** for development, tests, types, or toolin
 | [`@modelcontextprotocol/server-filesystem`](https://github.com/modelcontextprotocol/servers) | MIT / Apache-2.0 |
 | [`@panzoom/panzoom`](https://github.com/timmywil/panzoom) | MIT |
 | [`@stylistic/eslint-plugin`](https://github.com/eslint-stylistic/eslint-stylistic) | MIT |
+| [`@tauri-apps/cli`](https://github.com/tauri-apps/tauri) | Apache-2.0 OR MIT |
 | [`@testing-library/dom`](https://github.com/testing-library/dom-testing-library) | MIT |
 | [`@testing-library/react`](https://github.com/testing-library/react-testing-library) | MIT |
 | [`@types/babel__code-frame`](https://github.com/DefinitelyTyped/DefinitelyTyped) | MIT |

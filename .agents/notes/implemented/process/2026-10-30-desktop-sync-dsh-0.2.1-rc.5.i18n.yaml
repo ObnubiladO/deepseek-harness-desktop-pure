@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for 2026-10-30-desktop-sync-dsh-0.2.1-rc.5.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-10-30-desktop-sync-dsh-0.2.1-rc.5.md
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5:
+  en: 3b66d2babf4bbcad
+  zh: 84f5e95654ade097
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/problem:
+  en: c4d09eca05f2ba46
+  zh: 00ba021e25461479
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/decision:
+  en: 3b68979bff364a90
+  zh: b9d1578fdc5c55d8
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/alternatives-considered:
+  en: ae93374c298a255a
+  zh: 1a9ed09dfac23aac
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/consequences:
+  en: 0ba8f4ea4ee5697c
+  zh: bd4df40f45f4d1fb
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/testing:
+  en: 956fccf4c2494a34
+  zh: d6ece2bb54533997
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-rc-5/environment-note-the-build-sequence-held-a-fourth-time:
+  en: fb3638aa1a70d2a0
+  zh: fd789bbe94828aee

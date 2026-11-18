@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for 2026-10-14-desktop-sync-dsh-0.2.1-alpha.3.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-10-14-desktop-sync-dsh-0.2.1-alpha.3.md
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3:
+  en: 8751c4ccef1be3fc
+  zh: eba71d1059ab5011
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/problem:
+  en: e34e21e233b30a7f
+  zh: 8d3de5f1ad7a3302
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/decision:
+  en: 517beafe19d844f1
+  zh: 1b56fdd879e5a0b8
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/alternatives-considered:
+  en: e0f595a916c378d6
+  zh: 10c536f84a37d8f2
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/consequences:
+  en: 6755ead9dfac6197
+  zh: c1895b6de92dff8c
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/testing:
+  en: 8ed09795092ac455
+  zh: 78c615fe4f97dd81
+/agent-note-desktop-synchronization-with-dsh-v0-2-1-alpha-3/environment-note-npm-silently-drops-build-flags:
+  en: c6f3ccc02af58116
+  zh: 26262402a5d13759

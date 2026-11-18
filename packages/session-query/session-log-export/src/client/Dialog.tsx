@@ -37,10 +37,14 @@ export function SessionLogDownloadDialog({
   const { status } = entry
   const title = status === 'downloading'
     ? t('dialog.preparingTitle')
-    : status === 'success' ? t('dialog.successTitle') : t('dialog.errorTitle')
+    : status === 'success'
+      ? entry.successMode === 'file-saved' ? t('dialog.savedTitle') : t('dialog.successTitle')
+      : t('dialog.errorTitle')
   const description = status === 'downloading'
     ? t('dialog.preparingDescription')
-    : status === 'success' ? t('dialog.successDescription') : entry.error || t('dialog.commandFailed')
+    : status === 'success'
+      ? entry.successMode === 'file-saved' ? t('dialog.savedDescription') : t('dialog.successDescription')
+      : entry.error || t('dialog.commandFailed')
 
   return (
     <Modal

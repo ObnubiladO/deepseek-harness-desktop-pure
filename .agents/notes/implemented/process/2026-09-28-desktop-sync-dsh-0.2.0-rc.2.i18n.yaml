@@ -1,0 +1,31 @@
+# Bilingual-pair consistency record for 2026-09-28-desktop-sync-dsh-0.2.0-rc.2.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-28-desktop-sync-dsh-0.2.0-rc.2.md
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2:
+  en: 811d5828440e2597
+  zh: 6d5770b106b1c422
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/problem:
+  en: 08b5166ffccfeec7
+  zh: 6fea9d92be57b231
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/decision:
+  en: 020a601ec894f33e
+  zh: 7824f08cb4bd99c0
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/version-choice:
+  en: cb3b7e527f61e16e
+  zh: 85f95c7e525838d8
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/third-party-plugin-status:
+  en: c139d55cc79e3354
+  zh: 9d565641e20a05d6
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/alternatives-considered:
+  en: a4ec50dc4c5ded73
+  zh: 9e5afa8f03f43149
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/consequences:
+  en: 25966f6871ece372
+  zh: 4cfce2beba9e3392
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/testing:
+  en: 4263414164de44a5
+  zh: e696a20e80186b0d
+/agent-note-desktop-synchronization-with-dsh-v0-2-0-rc-2/environment-note-repository-recovery:
+  en: acf63518630d9088
+  zh: 0045c00839f1a44e

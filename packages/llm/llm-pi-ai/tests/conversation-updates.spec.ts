@@ -249,23 +249,25 @@ describe('historical tool availability on the wire', () => {
     })
   })
 
-  it('loads Codex tool additions through tool-search output', async () => {
+  it('loads Codex tool additions as incremental additional tools', async () => {
     // Codex extracts an account id from the token before contacting the mock server.
     const payload = Buffer.from(JSON.stringify({ 'https://api.openai.com/auth': { chatgpt_account_id: 'fixture-account' } })).toString('base64url')
     const token = `e30.${payload}.fixture`
     const update = addition()
-    const { requests } = await send('openai-codex', 'gpt-5.5', {
+    // pi-ai 1.4 declares every tool of an additional-tools model in `additional_tools` items, starting
+    // with one at the head of the input, so a later addition leaves the request prefix unchanged.
+    const { requests } = await send('openai-codex', 'gpt-6-sol', {
       messages: [user('first'), update], tools: [baseline, added],
       toolHistory: { tools: [baseline], updates: [{ messageId: update.id, additions: [added] }] },
     }, token)
     expect(requests).toHaveLength(1)
     expect(requests[0]).toMatchObject({
-      tools: [{ type: 'function', name: 'read' }],
       input: [
+        { type: 'additional_tools', role: 'developer', tools: [{ type: 'function', name: 'read' }] },
         { role: 'user', content: [{ type: 'input_text', text: 'first' }] },
-        { type: 'tool_search_call', execution: 'client', arguments: { query: 'search', limit: 1 } },
-        { type: 'tool_search_output', execution: 'client', tools: [
-          { type: 'function', name: 'search', description: added.description, parameters: added.parameters, defer_loading: true },
+        expect.objectContaining({ role: 'developer' }),
+        { type: 'additional_tools', role: 'developer', tools: [
+          { type: 'function', name: 'search', description: added.description, parameters: added.parameters },
         ] },
         { role: 'developer', content: 'Instruction one.\nInstruction two.' },
       ],
@@ -292,15 +294,16 @@ describe('historical tool availability on the wire', () => {
   it('rebuilds the Responses baseline after its immediate tool is removed', async () => {
     const update = addition()
     const remove = createDeveloperMessage({ source: { kind: 'tool-registry' }, content: [{ type: 'tool-removal', toolName: 'read' }] })
-    const { requests } = await send('openai', 'gpt-5.4', {
+    // pi-ai 1.5 declares GPT-5.4's tools only at the top level, so an additional-tools model carries the case.
+    const { requests } = await send('openai', 'gpt-6-sol', {
       messages: [user('first'), update, remove], tools: [added],
       toolHistory: { tools: [baseline], updates: [
         { messageId: update.id, additions: [added] }, { messageId: remove.id, additions: [] },
       ] },
     })
     expect(requests).toHaveLength(1)
-    expect(requests[0]).toHaveProperty('tools', [expect.objectContaining({ name: 'search' })])
     expect(requests[0]).toHaveProperty('input', [
+      { type: 'additional_tools', role: 'developer', tools: [expect.objectContaining({ name: 'search' })] },
       { role: 'user', content: [{ type: 'input_text', text: 'first' }] },
       { role: 'developer', content: 'Instruction one.\nInstruction two.' },
     ])

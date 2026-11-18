@@ -22,26 +22,48 @@ function model<A extends 'anthropic-messages' | 'openai-completions' | 'openai-r
   }
 }
 
-/** The arguments each `toolcall_delta` partial carries, and the finalized arguments. */
-async function collect(events: AsyncIterable<AssistantMessageEvent>): Promise<{ partials: unknown[]; final: unknown }> {
+/**
+ * The arguments each `toolcall_delta` partial carries, their serialization at emission time, and the
+ * finalized arguments.
+ */
+async function collect(events: AsyncIterable<AssistantMessageEvent>): Promise<{ partials: unknown[]; emitted: string[]; final: unknown }> {
   const partials: unknown[] = []
+  const emitted: string[] = []
   let final: unknown
   for await (const event of events) {
     if (event.type === 'toolcall_delta' && event.delta.length > 0) {
       const block = event.partial.content[event.contentIndex]
-      partials.push(block?.type === 'toolCall' ? block.arguments : undefined)
+      const value = block?.type === 'toolCall' ? block.arguments : undefined
+      partials.push(value)
+      emitted.push(JSON.stringify(value))
     } else if (event.type === 'toolcall_end') {
       final = event.toolCall.arguments
     } else if (event.type === 'error') {
       throw new Error(event.error.errorMessage)
     }
   }
-  return { partials, final }
+  return { partials, emitted, final }
+}
+
+/**
+ * pi-ai 1.5 parses streamed arguments incrementally (earendil-works/pi#9265): every delta yields a
+ * snapshot that never changes once returned, and the snapshots only grow. This adapter reads only
+ * delta strings and finalized arguments, so these are the properties it relies on.
+ */
+function expectIncrementalSnapshots({ partials, emitted, final }: { partials: unknown[]; emitted: string[]; final: unknown }) {
+  expect(partials).toHaveLength(fragments.length)
+  expect(partials.map(partial => JSON.stringify(partial))).toEqual(emitted)
+  const contentLengths = partials.map((partial) => {
+    const content = (partial as { content?: unknown } | undefined)?.content
+    return typeof content === 'string' ? content.length : 0
+  })
+  expect(contentLengths.every((length, index) => index === 0 || length >= contentLengths[index - 1]!)).toBe(true)
+  expect(final).toEqual(args)
 }
 
 const context = normalizeContext({ messages: [{ role: 'user', content: 'hi', timestamp: 0 }] })
 
-describe('streamed tool-call arguments (patched pi-ai)', () => {
+describe('streamed tool-call arguments (pi-ai incremental parser)', () => {
   it('preserves an empty Responses message after parallel tool calls with its replay metadata', async () => {
     const calls = [0, 1, 2].map(index => ({ type: 'function_call', call_id: `call_${index}`, id: `item_${index}`, name: 'read', arguments: '{}' }))
     const empty = { type: 'message', id: 'message_empty', role: 'assistant', content: [{ type: 'output_text', text: '', annotations: [] }] }
@@ -71,7 +93,7 @@ describe('streamed tool-call arguments (patched pi-ai)', () => {
     expect(server.requests).toHaveLength(1)
   })
 
-  it('openai-completions parses arguments once, at the end of the call', async () => {
+  it('openai-completions streams immutable, growing argument snapshots', async () => {
     const server = await mockServer([{ events: [
       JSON.stringify({ choices: [{
         delta: {
@@ -87,13 +109,10 @@ describe('streamed tool-call arguments (patched pi-ai)', () => {
       '[DONE]',
     ] }])
     const events = streamCompletions(model('openai-completions', server.url), context, { apiKey: 'test-key' })
-    const { partials, final } = await collect(events)
-    expect(partials).toHaveLength(fragments.length)
-    expect(partials.every(partial => JSON.stringify(partial) === '{}')).toBe(true)
-    expect(final).toEqual(args)
+    expectIncrementalSnapshots(await collect(events))
   })
 
-  it('anthropic-messages parses arguments once, at the end of the call', async () => {
+  it('anthropic-messages streams immutable, growing argument snapshots', async () => {
     const server = await mockServer([{ events: [
       anthropicMessageStart,
       frame({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_1', name: 'write', input: {} } }),
@@ -105,13 +124,33 @@ describe('streamed tool-call arguments (patched pi-ai)', () => {
       frame({ type: 'message_stop' }),
     ] }])
     const events = streamAnthropic(model('anthropic-messages', server.url), context, { apiKey: 'test-key' })
-    const { partials, final } = await collect(events)
-    expect(partials).toHaveLength(fragments.length)
-    expect(partials.every(partial => JSON.stringify(partial) === '{}')).toBe(true)
-    expect(final).toEqual(args)
+    expectIncrementalSnapshots(await collect(events))
   })
 
-  it('openai-responses parses arguments once, at the end of the call', async () => {
+  it('anthropic-messages keeps a multi-megabyte argument stream linear', async () => {
+    // A per-delta re-parse of the whole accumulated JSON would take several seconds here and stall
+    // every session in the process; an incremental parser finishes well inside the budget.
+    const large = JSON.stringify({ file_path: 'large.md', content: 'y'.repeat(4 * 1024 * 1024) })
+    const chunks = large.match(/.{1,4096}/gs) ?? []
+    const server = await mockServer([{ events: [
+      anthropicMessageStart,
+      frame({ type: 'content_block_start', index: 0, content_block: { type: 'tool_use', id: 'toolu_large', name: 'write', input: {} } }),
+      ...chunks.map(chunk => frame({ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: chunk } })),
+      frame({ type: 'content_block_stop', index: 0 }),
+      frame({ type: 'message_delta', delta: { stop_reason: 'tool_use', stop_sequence: null }, usage: { output_tokens: 5 } }),
+      frame({ type: 'message_stop' }),
+    ] }])
+    const started = performance.now()
+    let final: unknown
+    for await (const event of streamAnthropic(model('anthropic-messages', server.url), context, { apiKey: 'test-key' })) {
+      if (event.type === 'toolcall_end') final = event.toolCall.arguments
+      else if (event.type === 'error') throw new Error(event.error.errorMessage)
+    }
+    expect(performance.now() - started).toBeLessThan(3000)
+    expect(JSON.stringify(final)).toBe(large)
+  }, 20_000)
+
+  it('openai-responses streams immutable, growing argument snapshots', async () => {
     const item = { type: 'function_call', call_id: 'call_1', id: 'fc_1', name: 'write' }
     const server = await mockServer([{ events: [
       '{"type":"response.created","response":{"id":"resp_1"}}',
@@ -124,9 +163,6 @@ describe('streamed tool-call arguments (patched pi-ai)', () => {
       } }),
     ] }])
     const events = streamResponses(model('openai-responses', server.url), context, { apiKey: 'test-key' })
-    const { partials, final } = await collect(events)
-    expect(partials).toHaveLength(fragments.length)
-    expect(partials.every(partial => JSON.stringify(partial) === '{}')).toBe(true)
-    expect(final).toEqual(args)
+    expectIncrementalSnapshots(await collect(events))
   })
 })
